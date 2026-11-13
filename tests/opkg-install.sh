@@ -40,7 +40,10 @@ if [ -n "$USIGN" ]; then
 	"$here/../tools/sign-feed" "$USIGN" "$work/test.key" "$work/serve/feed" "$work/serve/stubs"
 	# tampered copy: modified index that no longer matches its signature
 	cp -R "$work/serve/feed" "$work/serve/tampered"
-	echo "# tampered" >> "$work/serve/tampered/Packages"
+	# opkg reads Packages.gz, so that is the file to modify (the signature stays the old one)
+	gzip -dc "$work/serve/tampered/Packages.gz" > "$work/tampered.txt"
+	echo "# tampered" >> "$work/tampered.txt"
+	gzip -9 -n -c "$work/tampered.txt" > "$work/serve/tampered/Packages.gz"
 fi
 
 python3 -m http.server "$port" --bind 127.0.0.1 --directory "$work/serve" >/dev/null 2>&1 &
