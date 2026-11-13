@@ -51,7 +51,11 @@ done
 opkg info wharf-glinet-openclash | grep -E "^(Package|Version|Depends):"
 
 cd /tmp/dl
-opkg download wharf-glinet-openclash
+# The GL.iNet adapter must be refused on a system without GL.iNet firmware
+# (gl-sdk4-ui-core is part of that firmware), so it cannot be installed there by mistake.
+if err=$(opkg download wharf-glinet-openclash 2>&1); then echo "GL.iNet adapter was accepted on plain OpenWrt"; exit 1; fi
+echo "$err" | grep -q "cannot find dependency gl-sdk4-ui-core" || { echo "unexpected error:"; echo "$err"; exit 1; }
+echo "GL.iNet adapter correctly refused without gl-sdk4-ui-core"
 opkg download wharf-openclash
 opkg download luci-app-openclash
 ls -l /tmp/dl
