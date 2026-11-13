@@ -53,4 +53,5 @@ git tag v1.0.1 && git push origin v1.0.1
 
 The `release` workflow tests, builds, runs the opkg round-trip and creates the
 GitHub release with all packages and the index. Routers use
-`releases/latest/download`, so the newest release is picked up automatically.
+the GitHub Pages URL (`https://0xfe10.github.io/wharf`, refreshed by the `pages` workflow
+after each release), so the newest release is picked up automatically.

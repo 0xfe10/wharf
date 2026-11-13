@@ -6,7 +6,7 @@
 Output: <out>/feed/{*.ipk,Packages,Packages.gz}, one flat feed with every package
 (upstream mirrors and wharf packages). The tag-triggered release workflow
 publishes these files as the assets of the GitHub release vX.Y.Z; routers use
-https://github.com/0xfe10/wharf/releases/latest/download as the feed URL.
+https://0xfe10.github.io/wharf as the feed URL (the pages workflow serves the latest release).
 """
 import argparse
 import os

@@ -3,16 +3,18 @@
 Feed URL (always the newest release):
 
 ```
-https://github.com/0xfe10/wharf/releases/latest/download
+https://0xfe10.github.io/wharf
 ```
 
-Each GitHub release `vX.Y.Z` holds every `.ipk` plus `Packages`, `Packages.gz`, `Packages.sig` and
-`wharf-usign.pub`; `https://github.com/0xfe10/wharf/releases/download/vX.Y.Z` pins a version.
+The same files are attached to each GitHub release `vX.Y.Z`
+(`https://github.com/0xfe10/wharf/releases/download/vX.Y.Z` pins a version), but do not use release
+URLs as the feed on GL.iNet routers: their download client cannot read the large response headers
+of `github.com` (see [issue #1](https://github.com/0xfe10/wharf/issues/1)).
 
 ## GL.iNet admin panel
 
 1. Applications > Packages > **Manage sources**.
-2. Name `wharf`, URL `https://github.com/0xfe10/wharf/releases/latest/download`, then click the **+** icon next to the fields (the entry must appear in
+2. Name `wharf`, URL `https://0xfe10.github.io/wharf`, then click the **+** icon next to the fields (the entry must appear in
    the list below), then **Apply**.
 3. Click **Refresh**, search `wharf`, install `wharf-openclash-glinet`
    (it pulls in `luci-app-openclash` and LuCI; LuCI is enabled automatically).
@@ -21,7 +23,7 @@ Each GitHub release `vX.Y.Z` holds every `.ipk` plus `Packages`, `Packages.gz`, 
 ## SSH / any OpenWrt
 
 ```sh
-echo 'src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download' >> /etc/opkg/customfeeds.conf
+echo 'src/gz wharf https://0xfe10.github.io/wharf' >> /etc/opkg/customfeeds.conf
 opkg update
 opkg install wharf-openclash-glinet            # GL.iNet 4.x (panel entry + LuCI + OpenClash)
 opkg install luci-compat luci-app-openclash    # any other OpenWrt (LuCI > Services > OpenClash)
@@ -37,7 +39,7 @@ From v1.0.1 the feed index (`Packages`) is signed with usign; the signature is
 key once (GL.iNet firmware does not check signatures and works without it):
 
 ```sh
-wget -O /etc/opkg/keys/3b9c3e21277942f0 https://github.com/0xfe10/wharf/releases/latest/download/wharf-usign.pub
+wget -O /etc/opkg/keys/3b9c3e21277942f0 https://0xfe10.github.io/wharf/wharf-usign.pub
 ```
 
 The key file name must be the key fingerprint, `3b9c3e21277942f0`. Compare it
@@ -52,9 +54,7 @@ OpenClash stay. Removing `luci-app-openclash` **deletes `/etc/openclash` and
 
 ## Reachability
 
-The feed is downloaded by the router itself. Release downloads start at `github.com` (and continue on
-GitHub's asset hosts). In some networks `github.com` is blocked while the router has no proxy yet; then
-`opkg update` fails. Options: get a proxy running for the router first (for example OpenClash installed
-by other means), or mirror all assets of a release to a web server you control and add that URL instead
-(a release is a flat set of static files; the signature stays valid). Packages are signed: only use
-mirrors you control.
+The feed is downloaded by the router itself, before any proxy is running, so `github.io` must be
+reachable from its network. A release is a set of static files: you can mirror its assets to any web
+server you control and add that URL instead (the signature stays valid). Packages are signed: only
+use mirrors you control.

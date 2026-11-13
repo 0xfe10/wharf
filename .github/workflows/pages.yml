@@ -1,0 +1,55 @@
+name: pages
+
+# Publishes the files of the LATEST GitHub release as the opkg feed at
+# https://0xfe10.github.io/wharf/ . This is the URL routers use: the GL.iNet download client
+# (uclient-fetch) cannot read the large response headers of github.com release downloads
+# (see issue #1), while Pages responses are small. The release workflow dispatches this on main
+# after creating a release; it can also be run by hand to re-publish the latest release.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Download the latest release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -eu
+          mkdir site
+          gh release download --dir site --pattern '*'
+          touch site/.nojekyll
+          for f in Packages Packages.gz Packages.sig wharf-usign.pub; do
+            [ -s "site/$f" ] || { echo "release is missing $f"; exit 1; }
+          done
+          cat > site/index.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>wharf opkg feed</title>
+          <h1>wharf opkg feed</h1>
+          <p>Add this URL as an opkg software source (GL.iNet: Applications &gt; Packages &gt; Manage sources):</p>
+          <pre id="u"></pre>
+          <script>document.getElementById("u").textContent = location.origin + location.pathname.replace(/\/$/, "")</script>
+          <p>Signed with usign (<a href="wharf-usign.pub">wharf-usign.pub</a>). Source and docs:
+          <a href="https://github.com/0xfe10/wharf">github.com/0xfe10/wharf</a>.</p>
+          HTML
+          ls -l site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

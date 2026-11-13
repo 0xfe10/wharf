@@ -2,7 +2,7 @@ name: release
 
 # Push a tag like v1.0.0 to publish: the GitHub release (title = tag) holds every
 # package plus Packages / Packages.gz / Packages.sig, and becomes "latest". Routers use
-# https://github.com/0xfe10/wharf/releases/latest/download as the opkg feed.
+# https://0xfe10.github.io/wharf as the opkg feed (the pages workflow publishes the latest release there).
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -57,6 +58,10 @@ jobs:
           gh release create "$GITHUB_REF_NAME" site/feed/* \
             --title "$GITHUB_REF_NAME" --generate-notes --latest --verify-tag
 
+      - name: Publish the feed on GitHub Pages (the URL routers use)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
 
   # What a router does, against the real public URL (redirects, https, signature).
   verify-published:

@@ -58,7 +58,7 @@ What no CI can check: GL.iNet's own firmware code (plugin list, menu loading, `i
 
 Not yet done. Work through in order; each step says how to roll back.
 
-1. In the panel: Applications > Packages > Manage sources, add `wharf` = `https://github.com/0xfe10/wharf/releases/latest/download` (click **+**, then Apply), Refresh. Do `wharf-*` packages appear in the plugin list?
+1. In the panel: Applications > Packages > Manage sources, add `wharf` = `https://0xfe10.github.io/wharf` (click **+**, then Apply), Refresh. Do `wharf-*` packages appear in the plugin list?
    *(No: use SSH `opkg update; opkg list | grep wharf` and report.)*
 2. Install `wharf-openclash-glinet`. Does the install finish, do the panel and
    internet keep working? *(Roll back: `opkg remove wharf-openclash-glinet`.)*

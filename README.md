@@ -8,22 +8,23 @@ firmwares. [OpenClash](plugins/openclash/README.md) is the first plugin.
 
 ## Use it
 
-One feed, published as the assets of every GitHub release (`vX.Y.Z`). This URL always serves the
-newest release:
+One feed, published on GitHub Pages. The same files are attached to every GitHub release
+(`vX.Y.Z`); the Pages URL always serves the newest release:
 
 ```
-https://github.com/0xfe10/wharf/releases/latest/download
+https://0xfe10.github.io/wharf
 ```
 
 - **GL.iNet 4.x:** Applications > Packages > Manage sources: enter a name (e.g. `wharf`) and the URL,
   click the **+** icon next to the fields so it appears in the list, then **Apply**. Click
   **Refresh**, search `wharf` and install `wharf-openclash-glinet`. Nothing needs to be done over SSH.
-- **Other OpenWrt:** `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` in `/etc/opkg/customfeeds.conf`, then
+- **Other OpenWrt:** `src/gz wharf https://0xfe10.github.io/wharf` in `/etc/opkg/customfeeds.conf`, then
   `opkg update && opkg install luci-compat luci-app-openclash`
   (OpenClash itself, without a GL.iNet panel entry).
 
-The router downloads the feed itself, so `github.com` must be reachable from its network. If it is
-not (no proxy running yet), see the reachability notes in [docs/using-the-feed.md](docs/using-the-feed.md).
+Why Pages and not the release URL: the download client of GL.iNet routers (uclient-fetch) cannot read
+the large response headers of `github.com`, so release downloads fail there even through a proxy
+([issue #1](https://github.com/0xfe10/wharf/issues/1)). Pages responses are small.
 
 Details: [docs/using-the-feed.md](docs/using-the-feed.md).
 
