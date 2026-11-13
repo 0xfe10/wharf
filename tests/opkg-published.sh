@@ -61,6 +61,6 @@ echo "GL.iNet adapter correctly refused without gl-sdk4-ui-core"
 opkg download wharf-openclash
 opkg download luci-app-openclash
 ls -l /tmp/dl
-test "$(wc -c < /tmp/dl/luci-app-openclash_*_all.ipk)" -gt 1000000
+for f in /tmp/dl/luci-app-openclash_*_all.ipk; do test "$(wc -c < "$f")" -gt 1000000; done
 echo "published feed OK"
 '
