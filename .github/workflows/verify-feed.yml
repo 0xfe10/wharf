@@ -15,4 +15,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+      - name: Network facts on the runner (for comparison with the container)
+        run: |
+          getent ahostsv4 github.com | head -5 || true
+          curl -sS -o /dev/null --connect-timeout 15 -w 'runner curl: %{remote_ip} http=%{http_code} redirects=%{num_redirects}\n' -L https://github.com/0xfe10/wharf/releases/latest/download/Packages.gz || true
       - run: tests/opkg-published.sh
