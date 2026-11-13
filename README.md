@@ -46,7 +46,10 @@ docs/                  feed usage, how to add a plugin
 python3 -m unittest discover tests -v   # tool, package and setup-luci tests
 node tests/view-eval.js                 # GL.iNet view loads as a Vue component
 tools/build-all --out site              # build the whole feed locally
-tests/opkg-install.sh site              # install/remove round-trip (needs docker)
+tests/opkg-install.sh site              # install/remove round-trip, signed feed (needs docker, USIGN=...)
+tools/check-versions --built site/feed  # changed packages must carry a new version
+python3 tests/check-glinet-deps.py      # every dependency exists in the GL.iNet feeds (network)
+tests/opkg-published.sh                 # the published feed as a router sees it (needs docker)
 ```
 
 Packages are built by CI (Linux: GNU tar, gzip, jq); on macOS the packaging tests are

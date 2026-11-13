@@ -38,6 +38,23 @@ Check the outcome: `cat /tmp/wharf-openclash-luci.status` (`running`, `ok` or
   transparent proxy (e.g. Clash TUN on the router's clients) without checking
   for firewall/routing conflicts.
 
+## Checked without a router (done in CI)
+
+- Package format, feed index, install and clean removal in an OpenWrt container, with
+  signature checking on (a tampered index is rejected).
+- The release is verified after publishing against the real URL: https and GitHub redirects,
+  signature with the public key in `keys/`, checksum-verified download of every package.
+- Every dependency of `wharf-glinet-openclash` (117 packages) exists in the GL.iNet feeds of
+  the Mudi 7 (firmware 4.10.0) or the wharf feed: `python3 tests/check-glinet-deps.py`.
+  `gl-sdk4-ui-core` is part of the firmware image and in no feed.
+- The panel page is evaluated like the panel does (`tests/view-eval.js`); its links follow
+  OpenClash's own URL scheme (`/cgi-bin/luci/admin/services/openclash`, `/ui/<dashboard>/#/setup?...`),
+  taken from the OpenClash 0.48.002 sources.
+- `setup-luci` (waiting for opkg, retrying, status file) against stub commands.
+
+What no CI can check: GL.iNet's own firmware code (plugin list, menu loading, `init_luci.sh`,
+`opkg` behind the panel).
+
 ## Verification checklist (needs a real router)
 
 Not yet done. Work through in order; each step says how to roll back.

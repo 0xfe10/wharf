@@ -27,11 +27,15 @@ module.exports = {
       var port = this.https ? 8443 : 8080
       return scheme + '://' + this.hostPart + ':' + port + '/cgi-bin/luci/admin/services/openclash'
     },
+    // Same shape OpenClash itself uses (common.js ocBuildDashboardURL): /ui/<dir>/#/setup?hostname=..&port=..
+    dashboardSetup: function () {
+      return '/#/setup?hostname=' + encodeURIComponent(this.host) + '&port=9090'
+    },
     dashboardUrl: function () {
-      return 'http://' + this.hostPart + ':9090/ui/metacubexd/'
+      return 'http://' + this.hostPart + ':9090/ui/metacubexd' + this.dashboardSetup
     },
     zashboardUrl: function () {
-      return 'http://' + this.hostPart + ':9090/ui/zashboard/'
+      return 'http://' + this.hostPart + ':9090/ui/zashboard' + this.dashboardSetup
     },
     text: function () {
       return this.zh ? {
@@ -41,7 +45,7 @@ module.exports = {
         dashboard: '打开仪表盘 (MetaCubeXD)',
         zashboard: '打开仪表盘 (Zashboard)',
         hint1: '设置页需要 LuCI 已在 8080/8443 端口运行(安装本插件时会自动启用)。LuCI 使用 root 密码登录。',
-        hint2: '仪表盘需要先在 OpenClash 设置页启动服务;首次启动会下载内核。',
+        hint2: '仪表盘需要先在 OpenClash 设置页启动服务;首次启动会下载内核。如果设置了访问密钥(secret),请在仪表盘里填入。',
         hint3: '卸载 OpenClash 本体会删除订阅和配置,卸载前请先备份。'
       } : {
         title: 'OpenClash',
@@ -50,7 +54,7 @@ module.exports = {
         dashboard: 'Open dashboard (MetaCubeXD)',
         zashboard: 'Open dashboard (Zashboard)',
         hint1: 'The settings page needs LuCI on port 8080/8443 (enabled when this plugin is installed). LuCI signs in with the root password.',
-        hint2: 'Start the service from the settings page first; the core is downloaded on the first start.',
+        hint2: 'Start the service from the settings page first; the core is downloaded on the first start. If you set a controller secret, enter it in the dashboard.',
         hint3: 'Removing OpenClash itself deletes your subscriptions and config. Back them up first.'
       }
     }

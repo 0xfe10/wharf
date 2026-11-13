@@ -34,6 +34,15 @@
 feed. Firmware-specific packages must therefore depend on something that exists
 only on that firmware (e.g. `gl-sdk4-ui-core`) so they cannot be installed elsewhere.
 
+## Versions
+
+A package name + version is immutable once published. If you change anything that goes
+into a wharf package (files, scripts, dependencies, description), raise its `version` in
+`plugins/<name>/plugin.json`; routers only upgrade when the version increases.
+`tools/check-versions` enforces this in CI by comparing the new build with the latest
+release (content only, timestamps ignored), so a forgotten bump fails the build.
+Mirrored upstream packages are versioned by upstream and are not checked.
+
 ## Releasing
 
 Releases are tags `vX.Y.Z` (the release title is the tag):

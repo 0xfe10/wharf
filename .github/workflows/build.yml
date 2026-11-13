@@ -13,11 +13,11 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: python3 -m unittest discover tests -v
@@ -27,8 +27,8 @@ jobs:
     needs: test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Build feeds
@@ -36,11 +36,17 @@ jobs:
           export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           tools/build-all --out site
           find site -type f | sort
+      - name: Changed packages must have a new version
+        run: tools/check-versions --built site/feed
+      - name: Dependencies are available from the GL.iNet feeds
+        # depends on fw.gl-inet.com being reachable, so a failure here is a warning
+        continue-on-error: true
+        run: python3 tests/check-glinet-deps.py --ours site/feed/Packages
       - name: Build usign
         run: echo "USIGN=$(tools/build-usign "$RUNNER_TEMP/usign")" >> "$GITHUB_ENV"
       - name: opkg round-trip in an OpenWrt container (signature checking on)
         run: tests/opkg-install.sh site
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: site
           path: site

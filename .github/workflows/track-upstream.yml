@@ -15,8 +15,8 @@ jobs:
   update:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Move the lock forward
@@ -31,7 +31,7 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
           rm update.log
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           branch: chore/upstream-update
           commit-message: "chore: update upstream pins"

@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Fail when a wharf package changed but kept the version that is already published.
+
+  check-versions [--built site/feed] [--published-url URL | --published-dir DIR]
+
+Compares each wharf-owned package of the freshly built feed with the published one
+of the same name and version (content only, timestamps ignored). Upstream mirrors
+are not checked. A missing published feed (first release) is not an error.
+"""
+import argparse
+import os
+import sys
+import tempfile
+import urllib.error
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wharflib as w  # noqa: E402
+
+DEFAULT_URL = "https://github.com/0xfe10/wharf/releases/latest/download"
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--built", default=os.path.join(w.ROOT, "site", "feed"))
+    src = ap.add_mutually_exclusive_group()
+    src.add_argument("--published-url", default=DEFAULT_URL)
+    src.add_argument("--published-dir")
+    args = ap.parse_args()
+
+    own = {pkg["name"] for p in w.iter_plugins() for pkg in p["packages"]}
+    with tempfile.TemporaryDirectory() as tmp:
+        if args.published_dir:
+            def fetch(name):
+                return os.path.join(args.published_dir, name)
+            with open(os.path.join(args.published_dir, "Packages"), encoding="utf-8") as f:
+                index = f.read()
+        else:
+            def fetch(name):
+                dest = os.path.join(tmp, os.path.basename(name))
+                with w._open(args.published_url + "/" + name) as r, open(dest, "wb") as f:
+                    f.write(r.read())
+                return dest
+            try:
+                with w._open(args.published_url + "/Packages") as r:
+                    index = r.read().decode("utf-8")
+            except urllib.error.HTTPError as e:
+                if e.code == 404:
+                    print("no published feed yet, nothing to compare")
+                    return
+                raise
+        problems, notes = w.check_package_versions(args.built, own, index, fetch)
+    for n in notes:
+        print("ok  " + n)
+    for p in problems:
+        print("ERROR " + p, file=sys.stderr)
+    if problems:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except w.WharfError as e:
+        sys.exit("error: %s" % e)

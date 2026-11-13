@@ -166,7 +166,7 @@ class RepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r = tool("build-ipk", "openclash", tmp)
             self.assertEqual(r.returncode, 0, r.stderr)
-            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-glinet-openclash_1.0.0-1_all.ipk"))
+            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-glinet-openclash_1.0.1-1_all.ipk"))
             names = [d["name"] for d in info["data"]]
             for want in ("./www/views/gl-sdk4-ui-openclash.common.js.gz",
                          "./usr/share/oui/menu.d/wharf-openclash.json",
@@ -178,6 +178,60 @@ class RepoTests(unittest.TestCase):
             self.assertIn("gl-sdk4-ui-core", info["control"]["Depends"])
             self.assertIn("postinst", info["scripts"])
             self.assertTrue(os.path.isfile(os.path.join(tmp, "generic", "wharf-openclash_1.0.0-1_all.ipk")))
+
+
+@NEEDS_GNU
+class VersionCheckTests(unittest.TestCase):
+    def _published_and_built(self, tmp, change_content, bump):
+        pdir = make_plugin(tmp)
+        pub = os.path.join(tmp, "published")
+        r = tool("build-pkg", pdir, "wharf-demo", pub)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(tool("make-feed", pub).returncode, 0)
+        if change_content:
+            with open(os.path.join(pdir, "t", "root", "www", "views", "v.js"), "w") as f:
+                f.write("module.exports = { changed: true }\n")
+        if bump:
+            spec = os.path.join(pdir, "plugin.json")
+            with open(spec) as f:
+                data = json.load(f)
+            data["packages"][0]["version"] = "1.0.1-1"
+            with open(spec, "w") as f:
+                json.dump(data, f)
+        built = os.path.join(tmp, "built")
+        env = dict(os.environ, SOURCE_DATE_EPOCH="1800000000")  # different timestamps on purpose
+        r = subprocess.run([os.path.join(ROOT, "tools", "build-pkg"), pdir, "wharf-demo", built],
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        return pub, built
+
+    def _check(self, pub, built):
+        # the check only looks at packages named in plugins/*/plugin.json, so run it as a library
+        names = {"wharf-demo"}
+        with open(os.path.join(pub, "Packages")) as f:
+            index = f.read()
+        return w.check_package_versions(built, names, index, lambda fn: os.path.join(pub, fn))
+
+    def test_same_content_new_timestamps_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pub, built = self._published_and_built(tmp, change_content=False, bump=False)
+            problems, notes = self._check(pub, built)
+            self.assertEqual(problems, [])
+            self.assertTrue(any("unchanged" in n for n in notes))
+
+    def test_changed_content_same_version_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pub, built = self._published_and_built(tmp, change_content=True, bump=False)
+            problems, _ = self._check(pub, built)
+            self.assertEqual(len(problems), 1)
+            self.assertIn("bump", problems[0])
+
+    def test_changed_content_with_bump_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            pub, built = self._published_and_built(tmp, change_content=True, bump=True)
+            problems, notes = self._check(pub, built)
+            self.assertEqual(problems, [])
+            self.assertTrue(any("not published yet" in n for n in notes))
 
 
 if __name__ == "__main__":

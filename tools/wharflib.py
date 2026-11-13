@@ -138,6 +138,63 @@ def read_ipk(path):
     return {"control": control, "scripts": scripts, "data": data}
 
 
+# ------------------------------------------------------ version-bump verification
+
+def parse_packages(text):
+    """Parse a Packages index into a list of control dicts."""
+    out = []
+    for block in re.split(r"\n\n+", text.strip()):
+        st = parse_control(block) if block.strip() else {}
+        if "Package" in st:
+            out.append(st)
+    return out
+
+
+def content_digest(path):
+    """sha256 over everything that matters in an ipk (control file and scripts, every
+    data entry's name/type/mode/content) but not timestamps, so two builds of the
+    same sources always agree even when SOURCE_DATE_EPOCH differs."""
+    h = hashlib.sha256()
+    with tarfile.open(path, "r:gz") as outer:
+        members = {m.name.lstrip("./"): m for m in outer.getmembers() if m.isfile()}
+        blobs = {n: outer.extractfile(members[n]).read() for n in ("control.tar.gz", "data.tar.gz")}
+    for label in ("control.tar.gz", "data.tar.gz"):
+        h.update(label.encode() + b"\0")
+        with tarfile.open(fileobj=io.BytesIO(blobs[label]), mode="r:gz") as t:
+            for m in sorted(t.getmembers(), key=lambda m: m.name):
+                body = t.extractfile(m).read() if m.isfile() else b""
+                h.update(("%s|%s|%o|%d|" % (m.name, m.type.decode(), m.mode & 0o7777, len(body))).encode())
+                h.update(hashlib.sha256(body).digest())
+    return h.hexdigest()
+
+
+def check_package_versions(built_dir, own_names, published_index, fetch_ipk):
+    """A package name+version that is already published must have identical content.
+
+    Returns (problems, notes). fetch_ipk(filename) must return a local path to the
+    published ipk."""
+    published = {(st["Package"], st["Version"]): st for st in parse_packages(published_index)}
+    problems, notes = [], []
+    for fn in sorted(os.listdir(built_dir)):
+        if not fn.endswith(".ipk"):
+            continue
+        path = os.path.join(built_dir, fn)
+        ctl = read_ipk(path)["control"]
+        name, version = ctl["Package"], ctl["Version"]
+        if name not in own_names:
+            continue
+        st = published.get((name, version))
+        if st is None:
+            notes.append("%s %s: not published yet" % (name, version))
+            continue
+        if content_digest(path) != content_digest(fetch_ipk(st["Filename"])):
+            problems.append("%s %s is already published with different content: bump its version "
+                            "in plugins/*/plugin.json" % (name, version))
+        else:
+            notes.append("%s %s: unchanged" % (name, version))
+    return problems, notes
+
+
 # ------------------------------------------------------------- upstream fetching
 
 def _open(url, token=None):

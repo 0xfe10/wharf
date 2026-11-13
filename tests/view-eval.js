@@ -58,7 +58,8 @@ for (const file of views) {
     const hrefs = []
     walk(tree, (n) => { if (n.tag === 'a') hrefs.push(n.data.attrs.href) })
     assert(hrefs.includes(expectLuci), 'LuCI link missing/wrong: ' + hrefs.join(', '))
-    assert(hrefs.some((u) => u.includes(':9090/ui/')), 'dashboard link missing')
+    assert(hrefs.some((u) => u.includes(':9090/ui/metacubexd/#/setup?hostname=')), 'dashboard link missing/wrong: ' + hrefs.join(', '))
+    assert(hrefs.some((u) => u.includes(':9090/ui/zashboard/#/setup?hostname=')), 'zashboard link missing/wrong')
     hrefs.forEach((u) => assert(/^https?:\/\//.test(u), 'unexpected scheme in ' + u))
   }
   console.log('ok  ' + path.relative(root, file))

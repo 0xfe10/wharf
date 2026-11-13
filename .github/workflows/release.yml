@@ -1,24 +1,26 @@
 name: release
 
 # Push a tag like v1.0.0 to publish: the GitHub release (title = tag) holds every
-# package plus Packages / Packages.gz, and becomes "latest". Routers use
+# package plus Packages / Packages.gz / Packages.sig, and becomes "latest". Routers use
 # https://github.com/0xfe10/wharf/releases/latest/download as the opkg feed.
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   release:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: python3 -m unittest discover tests -v
@@ -28,6 +30,8 @@ jobs:
           export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           tools/build-all --out site
           ls -l site/feed
+      - name: Changed packages must have a new version
+        run: tools/check-versions --built site/feed
       - name: Build usign
         run: echo "USIGN=$(tools/build-usign "$RUNNER_TEMP/usign")" >> "$GITHUB_ENV"
       - name: opkg round-trip in an OpenWrt container (signature checking on)
@@ -52,3 +56,12 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" site/feed/* \
             --title "$GITHUB_REF_NAME" --generate-notes --latest --verify-tag
+
+  # What a router does, against the real public URL (redirects, https, signature).
+  verify-published:
+    needs: release
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: opkg update/download from the published feed with signature checking on
+        run: tests/opkg-published.sh
