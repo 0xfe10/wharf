@@ -23,6 +23,9 @@ EOF2
 : > /etc/opkg/customfeeds.conf
 # Stock OpenWrt enables check_signature; GL.iNet firmware does not. Mimic GL.iNet.
 sed -i "/check_signature/d" /etc/opkg.conf
+# The rootfs image may not list the architectures our all-arch packages need.
+grep -q "^arch all" /etc/opkg.conf /etc/opkg/*.conf 2>/dev/null || echo "arch all 100" >> /etc/opkg.conf
+grep -q "^arch noarch" /etc/opkg.conf /etc/opkg/*.conf 2>/dev/null || echo "arch noarch 100" >> /etc/opkg.conf
 opkg update
 
 for p in luci-app-openclash wharf-openclash wharf-glinet-openclash; do
@@ -32,7 +35,9 @@ opkg info wharf-glinet-openclash | grep -q "^Depends:.*gl-sdk4-ui-core"
 
 # Pretend to be a GL.iNet system for the paths we install into.
 mkdir -p /usr/share/oui/menu.d /www/views /lib/upgrade/keep.d
-opkg install --force-depends wharf-glinet-openclash
+# Only our own package: its dependencies (GL.iNet core, OpenClash, LuCI) are not
+# meaningful in a plain OpenWrt container.
+opkg install --nodeps wharf-glinet-openclash || opkg install --force-depends wharf-glinet-openclash
 test -f /usr/share/oui/menu.d/wharf-openclash.json
 test -f /www/views/gl-sdk4-ui-openclash.common.js.gz
 gzip -t /www/views/gl-sdk4-ui-openclash.common.js.gz
