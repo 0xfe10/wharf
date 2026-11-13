@@ -1,7 +1,7 @@
 name: track-upstream
 
 # Weekly: if a plugin's upstream published a new release, open a PR that moves
-# plugins/<name>/upstream.lock.json. Nothing is published until that PR is merged.
+# plugins/<name>/upstream.lock.json. Nothing is published until that PR is merged and a vX.Y.Z tag is pushed.
 on:
   schedule:
     - cron: "17 3 * * 1"
@@ -44,5 +44,6 @@ jobs:
             ${{ steps.lock.outputs.summary }}
             ```
 
-            Review the upstream release notes before merging; merging publishes it.
+            Review the upstream release notes before merging. Merging does not publish:
+            push a release tag (vX.Y.Z) afterwards.
           add-paths: plugins/*/upstream.lock.json

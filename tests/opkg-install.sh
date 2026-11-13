@@ -19,16 +19,16 @@ srv=
 trap 'kill $srv 2>/dev/null || true; rm -rf "$work"' EXIT
 
 mkdir -p "$work/serve" "$work/stub/stub"
-cp -R "$site/opkg" "$work/serve/opkg"
+cp -R "$site/feed" "$work/serve/feed"
 cat > "$work/stub/stub/plugin.json" <<'JSON'
 {"name":"stub","packages":[
  {"name":"wharf-openclash","version":"999","feed":"stubs","description":"test stub"},
  {"name":"gl-sdk4-ui-core","version":"1","feed":"stubs","description":"test stub"}]}
 JSON
 for p in wharf-openclash gl-sdk4-ui-core; do
-	"$here/../tools/build-pkg" "$work/stub/stub" "$p" "$work/serve/opkg/stubs" >/dev/null
+	"$here/../tools/build-pkg" "$work/stub/stub" "$p" "$work/serve/stubs" >/dev/null
 done
-"$here/../tools/make-feed" "$work/serve/opkg/stubs" >/dev/null
+"$here/../tools/make-feed" "$work/serve/stubs" >/dev/null
 
 python3 -m http.server "$port" --bind 127.0.0.1 --directory "$work/serve" >/dev/null 2>&1 &
 srv=$!
@@ -41,9 +41,8 @@ mkdir -p /var/lock /var/run
 sed -i "/check_signature/d" /etc/opkg.conf
 printf "arch all 100\narch noarch 100\narch %s 200\n" "$DISTRIB_ARCH" >> /etc/opkg.conf
 cat >> /etc/opkg/customfeeds.conf <<EOF2
-src/gz wharf_generic http://127.0.0.1:$PORT/opkg/generic
-src/gz wharf_glinet http://127.0.0.1:$PORT/opkg/glinet
-src/gz wharf_stubs http://127.0.0.1:$PORT/opkg/stubs
+src/gz wharf http://127.0.0.1:$PORT/feed
+src/gz wharf_stubs http://127.0.0.1:$PORT/stubs
 EOF2
 opkg update
 

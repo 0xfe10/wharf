@@ -19,7 +19,7 @@
    that publishes a sha256 digest.
 2. Pin it: `tools/fetch-upstream --plugin example --update` writes
    `upstream.lock.json`. Commit it. The weekly `track-upstream` workflow opens
-   PRs for new releases; nothing is published until you merge.
+   PRs for new releases; nothing is published until you merge *and* push a release tag (see Releasing).
 3. Package files: set `"dir": "glinet"` on a package and add
    - `plugins/example/glinet/root/...` files installed to `/`
    - `plugins/example/glinet/CONTROL/{preinst,postinst,prerm,postrm,conffiles}`
@@ -30,5 +30,18 @@
    Packages are built by `tools/build-pkg` (GNU tar + jq), i.e. in CI.
 4. Run the tests and `tools/build-all --out site`.
 
-Feeds are just directory names (`feed`): keep firmware-specific packages in
-their own feed so users of other firmwares never see them.
+`feed` only groups build output: every package ends up in the single published
+feed. Firmware-specific packages must therefore depend on something that exists
+only on that firmware (e.g. `gl-sdk4-ui-core`) so they cannot be installed elsewhere.
+
+## Releasing
+
+Releases are tags `vX.Y.Z` (the release title is the tag):
+
+```sh
+git tag v1.0.1 && git push origin v1.0.1
+```
+
+The `release` workflow tests, builds, runs the opkg round-trip and creates the
+GitHub release with all packages and the index. Routers use
+`releases/latest/download`, so the newest release is picked up automatically.

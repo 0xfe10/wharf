@@ -6,16 +6,18 @@ OpenWrt 路由器的插件库:托管在 GitHub Releases 上的静态 **opkg 软�
 
 ## 使用
 
-软件源以 GitHub Release 附件的形式发布(每个源一个 release,每次推送到 `main` 由 CI 更新):
+只有一个软件源,以 GitHub Release 附件的形式发布。每个版本(`v1.0.0` 等)的 release 都包含全部软件包以及 `Packages` / `Packages.gz`;最新版本始终可以通过下面这个固定地址访问:
 
-| 源 | URL | 适用 |
-|---|---|---|
-| generic | `https://github.com/0xfe10/wharf/releases/download/feed-generic` | 任何带 opkg 的 OpenWrt |
-| glinet | `https://github.com/0xfe10/wharf/releases/download/feed-glinet` | GL.iNet 4.x 固件(会在后台添加入口) |
+```
+https://github.com/0xfe10/wharf/releases/latest/download
+```
 
-GL.iNet 用户在 应用 > 插件 > 添加自定义软件源 里把**两个源都加上**,然后在插件列表里安装 `wharf-glinet-openclash`。详见 [using-the-feed.md](../using-the-feed.md)(英文)。
+- **GL.iNet 4.x:** 应用 > 插件 > 添加自定义软件源,填入上面的地址,然后在插件列表里安装 `wharf-glinet-openclash`。
+- **其他 OpenWrt:** 在 `/etc/opkg/customfeeds.conf` 中加入 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`,然后执行 `opkg update && opkg install wharf-openclash`。
 
-> 软件包没有签名。GL.iNet 的 opkg 不校验签名,但**原版 OpenWrt 会校验**,在源被签名之前会拒绝这些源。请只添加你信任的源。
+详见 [using-the-feed.md](../using-the-feed.md)(英文)。
+
+> 软件包没有签名。GL.iNet 的 opkg 不校验签名,但**原版 OpenWrt 会校验**,在软件源被签名之前会拒绝它。请只添加你信任的源。
 
 ## 结构
 
@@ -26,7 +28,7 @@ plugins/<name>/
   <target>/            adapter for one firmware: CONTROL/ + root/
 tools/                 build-pkg, build-ipk, make-feed, fetch-upstream, build-all
 tests/                 unit tests, view evaluation, opkg round-trip
-.github/workflows/     build + publish, weekly upstream tracking
+.github/workflows/     build, release (vX.Y.Z tag), weekly upstream tracking
 docs/                  feed usage, adding a plugin, translations
 ```
 
@@ -35,11 +37,11 @@ docs/                  feed usage, adding a plugin, translations
 ```bash
 python3 -m unittest discover tests -v   # tests
 node tests/view-eval.js                 # GL.iNet view loads as a Vue component
-tools/build-all --out site              # build the whole feed locally (GNU tar + jq, i.e. Linux/CI)
+tools/build-all --out site              # build the feed locally (GNU tar + jq, i.e. Linux/CI)
 tests/opkg-install.sh site              # install/remove round-trip (needs docker)
 ```
 
-打包在 CI(Linux)里完成;macOS 上打包相关测试会被跳过。构建可复现(`SOURCE_DATE_EPOCH`)。上游包原样转存,且只有 sha256 与仓库里的锁文件一致时才会发布。新增插件见 [adding-a-plugin.md](../adding-a-plugin.md)(英文)。
+打包在 CI(Linux)里完成;macOS 上打包相关测试会被跳过。构建可复现(`SOURCE_DATE_EPOCH`)。上游包原样转存,且只有 sha256 与仓库里的锁文件一致时才会发布。发布新版本:推送 `vX.Y.Z` 形式的 tag。新增插件见 [adding-a-plugin.md](../adding-a-plugin.md)(英文)。
 
 ## 状态
 

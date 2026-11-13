@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Build the complete static opkg site from every plugin under plugins/.
+"""Build the complete static opkg feed from every plugin under plugins/.
 
   build-all [--out site] [--build build] [--plugin NAME]
 
-Output layout:  <out>/opkg/<feed>/{*.ipk,Packages,Packages.gz}
-(CI publishes each feed directory as the assets of the GitHub release feed-<feed>.)
+Output: <out>/feed/{*.ipk,Packages,Packages.gz}, one flat feed with every package
+(upstream mirrors and wharf packages). The tag-triggered release workflow
+publishes these files as the assets of the GitHub release vX.Y.Z; routers use
+https://github.com/0xfe10/wharf/releases/latest/download as the feed URL.
 """
 import argparse
 import os
@@ -28,23 +30,28 @@ def main():
     plugins = [p for p in w.iter_plugins() if args.plugin in (None, p["name"])]
     if not plugins:
         sys.exit("no plugins found")
-    if os.path.isdir(args.out):
-        shutil.rmtree(args.out)
-    opkg = os.path.join(args.out, "opkg")
-    index = {}
+    for d in (args.out, os.path.join(args.build, "stage")):
+        if os.path.isdir(d):
+            shutil.rmtree(d)
+    stage = os.path.join(args.build, "stage")
+    feed = os.path.join(args.out, "feed")
+    os.makedirs(feed)
+
+    def add(src):
+        dest = os.path.join(feed, os.path.basename(src))
+        if os.path.exists(dest):
+            raise w.WharfError("duplicate package file %s" % os.path.basename(src))
+        shutil.copy(src, dest)
+
     for p in plugins:
-        up = p.get("upstream")
-        if up:
-            src = w.fetch_locked(p, os.path.join(args.build, "upstream", p["name"]))
-            feed_dir = os.path.join(opkg, up["feed"])
-            os.makedirs(feed_dir, exist_ok=True)
-            shutil.copy(src, feed_dir)
-            ctl = w.read_ipk(src)["control"]
-            index.setdefault(up["feed"], []).append((ctl["Package"], ctl["Version"]))
-        subprocess.run([os.path.join(here, "build-ipk"), p["name"], opkg], check=True, stdout=subprocess.DEVNULL)
-        for pkg in p["packages"]:
-            index.setdefault(pkg["feed"], []).append((pkg["name"], pkg["version"]))
-    subprocess.run([os.path.join(here, "make-feed")] + [os.path.join(opkg, f) for f in sorted(index)], check=True)
+        if p.get("upstream"):
+            add(w.fetch_locked(p, os.path.join(args.build, "upstream", p["name"])))
+        subprocess.run([os.path.join(here, "build-ipk"), p["name"], stage], check=True, stdout=subprocess.DEVNULL)
+    for cur, _, files in sorted(os.walk(stage)):
+        for fn in sorted(files):
+            if fn.endswith(".ipk"):
+                add(os.path.join(cur, fn))
+    subprocess.run([os.path.join(here, "make-feed"), feed], check=True)
     print("site written to %s" % args.out)
 
 

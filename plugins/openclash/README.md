@@ -1,10 +1,10 @@
 # OpenClash
 
-| Package | Feed | What it is |
-|---|---|---|
-| `luci-app-openclash` | generic | Upstream [vernesong/OpenClash](https://github.com/vernesong/OpenClash) ipk, mirrored unchanged (pinned in `upstream.lock.json`, sha256-verified) |
-| `wharf-openclash` | generic | Meta package: OpenClash + `luci`, `luci-compat`, `luci-base` |
-| `wharf-glinet-openclash` | glinet | GL.iNet 4.x adapter: **Applications > OpenClash** panel entry, LuCI enabled on 8080/8443, `/etc/openclash` kept across firmware upgrades |
+| Package | What it is |
+|---|---|
+| `luci-app-openclash` | Upstream [vernesong/OpenClash](https://github.com/vernesong/OpenClash) ipk, mirrored unchanged (pinned in `upstream.lock.json`, sha256-verified) |
+| `wharf-openclash` | Meta package: OpenClash + `luci`, `luci-compat`, `luci-base` |
+| `wharf-glinet-openclash` | GL.iNet 4.x adapter: **Applications > OpenClash** panel entry, LuCI enabled on 8080/8443, `/etc/openclash` kept across firmware upgrades |
 
 ## How the GL.iNet entry works
 
@@ -42,7 +42,7 @@ Check the outcome: `cat /tmp/wharf-openclash-luci.status` (`running`, `ok` or
 
 Not yet done. Work through in order; each step says how to roll back.
 
-1. Add both feeds; refresh. Do `wharf-*` packages appear in the plugin list?
+1. Add the feed; refresh. Do `wharf-*` packages appear in the plugin list?
    *(No: use SSH `opkg update; opkg list | grep wharf` and report.)*
 2. Install `wharf-glinet-openclash`. Does the install finish, do the panel and
    internet keep working? *(Roll back: `opkg remove wharf-glinet-openclash`.)*

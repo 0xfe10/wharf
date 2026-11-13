@@ -8,19 +8,23 @@ firmwares. [OpenClash](plugins/openclash/README.md) is the first plugin.
 
 ## Use it
 
-Feeds are published as GitHub release assets (one release per feed, updated by CI on every push to `main`):
+One feed, published as GitHub release assets. Every release (`v1.0.0`, ...) holds
+all packages plus `Packages` / `Packages.gz`; the newest release is always
+reachable at this fixed URL:
 
-| Feed | URL | For |
-|---|---|---|
-| generic | `https://github.com/0xfe10/wharf/releases/download/feed-generic` | any OpenWrt with opkg |
-| glinet | `https://github.com/0xfe10/wharf/releases/download/feed-glinet` | GL.iNet 4.x firmware (adds an admin-panel entry) |
+```
+https://github.com/0xfe10/wharf/releases/latest/download
+```
 
-GL.iNet users add **both** feeds (Applications > Plugins > custom software
-source), then install `wharf-glinet-openclash` from the plugin list.
+- **GL.iNet 4.x:** Applications > Plugins > custom software source, add the URL,
+  then install `wharf-glinet-openclash` from the plugin list.
+- **Other OpenWrt:** `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` in `/etc/opkg/customfeeds.conf`, then
+  `opkg update && opkg install wharf-openclash`.
+
 Details: [docs/using-the-feed.md](docs/using-the-feed.md).
 
 > Packages are unsigned. GL.iNet's opkg does not enable signature checks, but **stock
-> OpenWrt does** and will reject these feeds until they are signed (see
+> OpenWrt does** and will reject this feed until it is signed (see
 > [docs/using-the-feed.md](docs/using-the-feed.md)). Only add feeds you trust.
 
 ## Layout
@@ -32,7 +36,7 @@ plugins/<name>/
   <target>/            adapter for one firmware: CONTROL/ scripts + root/ files
 tools/                 build-pkg, build-ipk, make-feed (sh + GNU tar + jq), fetch-upstream, build-all (Python stdlib)
 tests/                 unit tests, view evaluation (node), opkg round-trip (docker)
-.github/workflows/     build + publish, weekly upstream tracking
+.github/workflows/     build, release (push a vX.Y.Z tag), weekly upstream tracking
 docs/                  feed usage, how to add a plugin
 ```
 

@@ -6,16 +6,18 @@ OpenWrt 路由器的外掛程式庫:託管在 GitHub Releases 上的靜態 **opk
 
 ## 使用
 
-軟體來源以 GitHub Release 附件的形式發佈(每個來源一個 release,每次推送到 `main` 由 CI 更新):
+只有一個軟體來源,以 GitHub Release 附件的形式發佈。每個版本(`v1.0.0` 等)的 release 都包含全部軟體套件以及 `Packages` / `Packages.gz`;最新版本一律可透過下面這個固定網址取得:
 
-| 來源 | URL | 適用 |
-|---|---|---|
-| generic | `https://github.com/0xfe10/wharf/releases/download/feed-generic` | 任何帶 opkg 的 OpenWrt |
-| glinet | `https://github.com/0xfe10/wharf/releases/download/feed-glinet` | GL.iNet 4.x 韌體(會在後台新增入口) |
+```
+https://github.com/0xfe10/wharf/releases/latest/download
+```
 
-GL.iNet 使用者在 應用程式 > 外掛 > 新增自訂軟體來源 中把**兩個來源都加上**,然後在外掛清單中安裝 `wharf-glinet-openclash`。詳見 [using-the-feed.md](../using-the-feed.md)(英文)。
+- **GL.iNet 4.x:** 應用程式 > 外掛 > 新增自訂軟體來源,填入上面的網址,然後在外掛清單中安裝 `wharf-glinet-openclash`。
+- **其他 OpenWrt:** 在 `/etc/opkg/customfeeds.conf` 中加入 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`,然後執行 `opkg update && opkg install wharf-openclash`。
 
-> 軟體套件沒有簽章。GL.iNet 的 opkg 不驗證簽章,但**原版 OpenWrt 會驗證**,在來源被簽章之前會拒絕這些來源。請只新增你信任的來源。
+詳見 [using-the-feed.md](../using-the-feed.md)(英文)。
+
+> 軟體套件沒有簽章。GL.iNet 的 opkg 不驗證簽章,但**原版 OpenWrt 會驗證**,在軟體來源被簽章之前會拒絕它。請只新增你信任的來源。
 
 ## 結構
 
@@ -26,7 +28,7 @@ plugins/<name>/
   <target>/            adapter for one firmware: CONTROL/ + root/
 tools/                 build-pkg, build-ipk, make-feed, fetch-upstream, build-all
 tests/                 unit tests, view evaluation, opkg round-trip
-.github/workflows/     build + publish, weekly upstream tracking
+.github/workflows/     build, release (vX.Y.Z tag), weekly upstream tracking
 docs/                  feed usage, adding a plugin, translations
 ```
 
@@ -35,11 +37,11 @@ docs/                  feed usage, adding a plugin, translations
 ```bash
 python3 -m unittest discover tests -v   # tests
 node tests/view-eval.js                 # GL.iNet view loads as a Vue component
-tools/build-all --out site              # build the whole feed locally (GNU tar + jq, i.e. Linux/CI)
+tools/build-all --out site              # build the feed locally (GNU tar + jq, i.e. Linux/CI)
 tests/opkg-install.sh site              # install/remove round-trip (needs docker)
 ```
 
-打包在 CI(Linux)中完成;macOS 上與打包相關的測試會被跳過。建置可重現(`SOURCE_DATE_EPOCH`)。上游套件原樣轉存,且只有 sha256 與儲存庫中的鎖定檔一致時才會發佈。新增外掛見 [adding-a-plugin.md](../adding-a-plugin.md)(英文)。
+打包在 CI(Linux)中完成;macOS 上與打包相關的測試會被跳過。建置可重現(`SOURCE_DATE_EPOCH`)。上游套件原樣轉存,且只有 sha256 與儲存庫中的鎖定檔一致時才會發佈。發佈新版本:推送 `vX.Y.Z` 格式的 tag。新增外掛見 [adding-a-plugin.md](../adding-a-plugin.md)(英文)。
 
 ## 狀態
 

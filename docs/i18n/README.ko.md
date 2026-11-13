@@ -6,14 +6,16 @@ OpenWrt 라우터용 플러그인 라이브러리입니다. GitHub Releases에�
 
 ## 사용법
 
-피드는 GitHub Release 자산으로 배포됩니다(피드마다 release 하나, `main`에 푸시할 때마다 CI가 갱신합니다).
+피드는 하나이며 GitHub Release 자산으로 배포됩니다. 각 버전(`v1.0.0` 등)의 release에는 모든 패키지와 `Packages` / `Packages.gz`가 들어 있고, 최신 버전은 아래 고정 URL로 항상 받을 수 있습니다.
 
-| 피드 | URL | 대상 |
-|---|---|---|
-| generic | `https://github.com/0xfe10/wharf/releases/download/feed-generic` | opkg를 쓰는 모든 OpenWrt |
-| glinet | `https://github.com/0xfe10/wharf/releases/download/feed-glinet` | GL.iNet 4.x 펌웨어(관리 화면에 항목 추가) |
+```
+https://github.com/0xfe10/wharf/releases/latest/download
+```
 
-GL.iNet에서는 '애플리케이션 > 플러그인'의 사용자 지정 소프트웨어 소스에 **두 피드를 모두** 추가한 뒤 플러그인 목록에서 `wharf-glinet-openclash`를 설치합니다. 자세한 내용은 [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요.
+- **GL.iNet 4.x:** '애플리케이션 > 플러그인'의 사용자 지정 소프트웨어 소스에 위 URL을 추가한 뒤 플러그인 목록에서 `wharf-glinet-openclash`를 설치합니다.
+- **그 밖의 OpenWrt:** `/etc/opkg/customfeeds.conf`에 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`를 추가하고 `opkg update && opkg install wharf-openclash`를 실행합니다.
+
+자세한 내용은 [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요.
 
 > 패키지에는 서명이 없습니다. GL.iNet의 opkg는 서명을 검증하지 않지만 **기본 OpenWrt는 검증하므로** 피드에 서명하기 전에는 거부됩니다. 신뢰할 수 있는 피드만 추가하세요.
 
@@ -26,7 +28,7 @@ plugins/<name>/
   <target>/            adapter for one firmware: CONTROL/ + root/
 tools/                 build-pkg, build-ipk, make-feed, fetch-upstream, build-all
 tests/                 unit tests, view evaluation, opkg round-trip
-.github/workflows/     build + publish, weekly upstream tracking
+.github/workflows/     build, release (vX.Y.Z tag), weekly upstream tracking
 docs/                  feed usage, adding a plugin, translations
 ```
 
@@ -35,11 +37,11 @@ docs/                  feed usage, adding a plugin, translations
 ```bash
 python3 -m unittest discover tests -v   # tests
 node tests/view-eval.js                 # GL.iNet view loads as a Vue component
-tools/build-all --out site              # build the whole feed locally (GNU tar + jq, i.e. Linux/CI)
+tools/build-all --out site              # build the feed locally (GNU tar + jq, i.e. Linux/CI)
 tests/opkg-install.sh site              # install/remove round-trip (needs docker)
 ```
 
-패키징은 CI(Linux)에서 수행하며 macOS에서는 패키징 관련 테스트를 건너뜁니다. 빌드는 재현 가능합니다(`SOURCE_DATE_EPOCH`). 업스트림 패키지는 그대로 미러링되며 sha256이 저장소의 잠금 파일과 일치할 때만 배포됩니다. 플러그인 추가는 [adding-a-plugin.md](../adding-a-plugin.md)(영어)를 참고하세요.
+패키징은 CI(Linux)에서 수행하며 macOS에서는 패키징 관련 테스트를 건너뜁니다. 빌드는 재현 가능합니다(`SOURCE_DATE_EPOCH`). 업스트림 패키지는 그대로 미러링되며 sha256이 저장소의 잠금 파일과 일치할 때만 배포됩니다. 새 버전을 배포하려면 `vX.Y.Z` 형식의 태그를 푸시합니다. 플러그인 추가는 [adding-a-plugin.md](../adding-a-plugin.md)(영어)를 참고하세요.
 
 ## 상태
 
