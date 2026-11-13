@@ -15,8 +15,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - name: Network facts on the runner (for comparison with the container)
+      - name: Pin the addresses this runner can reach (the container resolver sometimes returns unreachable ones)
         run: |
-          getent ahostsv4 github.com | head -5 || true
-          curl -sS -o /dev/null --connect-timeout 15 -w 'runner curl: %{remote_ip} http=%{http_code} redirects=%{num_redirects}\n' -L https://github.com/0xfe10/wharf/releases/latest/download/Packages.gz || true
+          set -eu
+          url=https://github.com/0xfe10/wharf/releases/latest/download/Packages.gz
+          gh_ip=$(curl -sS -o /dev/null --connect-timeout 15 -w '%{remote_ip}' "$url")
+          asset_url=$(curl -sS -o /dev/null --connect-timeout 15 -L -w '%{url_effective}' "$url")
+          asset_host=$(echo "$asset_url" | sed -E 's#^https://([^/]+)/.*#\1#')
+          asset_ip=$(curl -sS -o /dev/null --connect-timeout 15 -L -w '%{remote_ip}' "$url")
+          echo "github.com=$gh_ip $asset_host=$asset_ip"
+          echo "ADD_HOSTS=--add-host github.com:$gh_ip --add-host $asset_host:$asset_ip" >> "$GITHUB_ENV"
       - run: tests/opkg-published.sh

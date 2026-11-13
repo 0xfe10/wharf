@@ -9,7 +9,10 @@ here=$(cd "$(dirname "$0")" && pwd)
 url=${1:-https://github.com/0xfe10/wharf/releases/latest/download}
 image=${OPENWRT_IMAGE:-openwrt/rootfs:x86-64-23.05.4}
 
-docker run --rm --network host -e URL="$url" -v "$here/../keys/wharf-usign.pub:/tmp/wharf-usign.pub:ro" "$image" sh -eu -c '
+# ADD_HOSTS (optional, e.g. "--add-host github.com:1.2.3.4") pins addresses the runner can reach
+# when the container resolver returns ones it cannot. Left unquoted on purpose.
+# shellcheck disable=SC2086
+docker run --rm ${ADD_HOSTS:-} -e URL="$url" -v "$here/../keys/wharf-usign.pub:/tmp/wharf-usign.pub:ro" "$image" sh -eu -c '
 mkdir -p /var/lock /var/run /tmp/dl
 . /etc/openwrt_release
 printf "arch all 100\narch noarch 100\narch %s 200\n" "$DISTRIB_ARCH" >> /etc/opkg.conf
