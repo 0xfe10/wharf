@@ -2,7 +2,7 @@
 """Check that every dependency of the wharf packages can be satisfied from GL.iNet's
 own package feeds plus the wharf feed, by walking the dependency closure.
 
-  check-glinet-deps.py [--ours site/feed/Packages] [--package wharf-glinet-openclash]
+  check-glinet-deps.py [--ours site/feed/Packages] [--package wharf-openclash-glinet]
 
 The default GL.iNet feeds are those of the Mudi 7 (GL-E5800) on firmware 4.10.0
 (read from its /etc/opkg/distfeeds.conf). Packages already installed on the router
@@ -58,7 +58,7 @@ def alternatives(depends):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ours", default="https://github.com/0xfe10/wharf/releases/latest/download/Packages")
-    ap.add_argument("--package", default="wharf-glinet-openclash")
+    ap.add_argument("--package", default="wharf-openclash-glinet")
     ap.add_argument("--feed", action="append", help="GL.iNet feed base URL (repeatable)")
     args = ap.parse_args()
 

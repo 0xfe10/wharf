@@ -12,8 +12,8 @@ OpenWrt 라우터용 플러그인 라이브러리입니다. GitHub Releases에�
 https://github.com/0xfe10/wharf/releases/latest/download
 ```
 
-- **GL.iNet 4.x:** '애플리케이션 > 플러그인'의 사용자 지정 소프트웨어 소스에 위 URL을 추가한 뒤 플러그인 목록에서 `wharf-glinet-openclash`를 설치합니다.
-- **그 밖의 OpenWrt:** `/etc/opkg/customfeeds.conf`에 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`를 추가하고 `opkg update && opkg install wharf-openclash`를 실행합니다.
+- **GL.iNet 4.x:** '애플리케이션 > 플러그인'의 사용자 지정 소프트웨어 소스에 위 URL을 추가한 뒤 플러그인 목록에서 `wharf-openclash-glinet`를 설치합니다.
+- **그 밖의 OpenWrt:** `/etc/opkg/customfeeds.conf`에 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`를 추가하고 `opkg update && opkg install luci-compat luci-app-openclash`를 실행합니다.
 
 자세한 내용은 [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요.
 

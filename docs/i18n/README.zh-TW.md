@@ -12,8 +12,8 @@ OpenWrt 路由器的外掛程式庫:託管在 GitHub Releases 上的靜態 **opk
 https://github.com/0xfe10/wharf/releases/latest/download
 ```
 
-- **GL.iNet 4.x:** 應用程式 > 外掛 > 新增自訂軟體來源,填入上面的網址,然後在外掛清單中安裝 `wharf-glinet-openclash`。
-- **其他 OpenWrt:** 在 `/etc/opkg/customfeeds.conf` 中加入 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`,然後執行 `opkg update && opkg install wharf-openclash`。
+- **GL.iNet 4.x:** 應用程式 > 外掛 > 新增自訂軟體來源,填入上面的網址,然後在外掛清單中安裝 `wharf-openclash-glinet`。
+- **其他 OpenWrt:** 在 `/etc/opkg/customfeeds.conf` 中加入 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`,然後執行 `opkg update && opkg install luci-compat luci-app-openclash`。
 
 詳見 [using-the-feed.md](../using-the-feed.md)(英文)。
 

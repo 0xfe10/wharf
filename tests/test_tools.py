@@ -166,7 +166,7 @@ class RepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r = tool("build-ipk", "openclash", tmp)
             self.assertEqual(r.returncode, 0, r.stderr)
-            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-glinet-openclash_1.0.3-1_all.ipk"))
+            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-openclash-glinet_1.1.0-1_all.ipk"))
             names = [d["name"] for d in info["data"]]
             for want in ("./www/views/gl-sdk4-ui-openclash.common.js.gz",
                          "./usr/share/oui/menu.d/wharf-openclash.json",
@@ -177,7 +177,6 @@ class RepoTests(unittest.TestCase):
             self.assertEqual(mode["./usr/libexec/wharf-openclash/setup-luci"], 0o755)
             self.assertIn("gl-sdk4-ui-core", info["control"]["Depends"])
             self.assertIn("postinst", info["scripts"])
-            self.assertTrue(os.path.isfile(os.path.join(tmp, "generic", "wharf-openclash_1.0.0-1_all.ipk")))
 
 
 @NEEDS_GNU

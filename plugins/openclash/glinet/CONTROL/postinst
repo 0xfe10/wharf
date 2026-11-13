@@ -1,5 +1,5 @@
 #!/bin/sh
-# wharf-glinet-openclash (runs on the router, inside the opkg transaction).
+# wharf-openclash-glinet (runs on the router, inside the opkg transaction).
 [ -n "${IPKG_INSTROOT}" ] && exit 0
 
 # Reload (not restart) GL.iNet's nginx so the new menu entry is picked up.

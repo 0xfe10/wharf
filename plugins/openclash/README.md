@@ -3,8 +3,7 @@
 | Package | What it is |
 |---|---|
 | `luci-app-openclash` | Upstream [vernesong/OpenClash](https://github.com/vernesong/OpenClash) ipk, mirrored unchanged (pinned in `upstream.lock.json`, sha256-verified) |
-| `wharf-openclash` | Meta package: OpenClash + `luci`, `luci-compat`, `luci-base` |
-| `wharf-glinet-openclash` | GL.iNet 4.x adapter: **Applications > OpenClash** panel entry, LuCI enabled on 8080/8443, `/etc/openclash` kept across firmware upgrades |
+| `wharf-openclash-glinet` | GL.iNet 4.x adapter: **Applications > OpenClash** panel entry, LuCI enabled on 8080/8443, `/etc/openclash` kept across firmware upgrades |
 
 ## How the GL.iNet entry works
 
@@ -44,7 +43,7 @@ Check the outcome: `cat /tmp/wharf-openclash-luci.status` (`running`, `ok` or
   signature checking on (a tampered index is rejected).
 - The release is verified after publishing against the real URL: https and GitHub redirects,
   signature with the public key in `keys/`, checksum-verified download of every package.
-- Every dependency of `wharf-glinet-openclash` (117 packages) exists in the GL.iNet feeds of
+- Every dependency of `wharf-openclash-glinet` (117 packages) exists in the GL.iNet feeds of
   the Mudi 7 (firmware 4.10.0) or the wharf feed: `python3 tests/check-glinet-deps.py`.
   `gl-sdk4-ui-core` is part of the firmware image and in no feed.
 - The panel page is evaluated like the panel does (`tests/view-eval.js`); its links follow
@@ -61,8 +60,8 @@ Not yet done. Work through in order; each step says how to roll back.
 
 1. In the panel: Applications > Packages > Manage sources, add `wharf` = `https://github.com/0xfe10/wharf/releases/latest/download` (click **+**, then Apply), Refresh. Do `wharf-*` packages appear in the plugin list?
    *(No: use SSH `opkg update; opkg list | grep wharf` and report.)*
-2. Install `wharf-glinet-openclash`. Does the install finish, do the panel and
-   internet keep working? *(Roll back: `opkg remove wharf-glinet-openclash`.)*
+2. Install `wharf-openclash-glinet`. Does the install finish, do the panel and
+   internet keep working? *(Roll back: `opkg remove wharf-openclash-glinet`.)*
 3. Is there an **Applications > OpenClash** menu entry and does the page load?
    *(Remove the package; if the panel misbehaves delete
    `/usr/share/oui/menu.d/wharf-openclash.json` and

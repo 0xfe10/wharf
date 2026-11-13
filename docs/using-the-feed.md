@@ -14,8 +14,8 @@ Each GitHub release `vX.Y.Z` holds every `.ipk` plus `Packages`, `Packages.gz`, 
 1. Applications > Packages > **Manage sources**.
 2. Name `wharf`, URL `https://github.com/0xfe10/wharf/releases/latest/download`, then click the **+** icon next to the fields (the entry must appear in
    the list below), then **Apply**.
-3. Click **Refresh**, search `wharf`, install `wharf-glinet-openclash`
-   (it pulls in `wharf-openclash`, `luci-app-openclash` and LuCI; LuCI is enabled automatically).
+3. Click **Refresh**, search `wharf`, install `wharf-openclash-glinet`
+   (it pulls in `luci-app-openclash` and LuCI; LuCI is enabled automatically).
 4. A new **OpenClash** entry appears under Applications.
 
 ## SSH / any OpenWrt
@@ -23,11 +23,11 @@ Each GitHub release `vX.Y.Z` holds every `.ipk` plus `Packages`, `Packages.gz`, 
 ```sh
 echo 'src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download' >> /etc/opkg/customfeeds.conf
 opkg update
-opkg install wharf-glinet-openclash   # GL.iNet 4.x
-opkg install wharf-openclash          # any other OpenWrt (LuCI > Services > OpenClash)
+opkg install wharf-openclash-glinet            # GL.iNet 4.x (panel entry + LuCI + OpenClash)
+opkg install luci-compat luci-app-openclash    # any other OpenWrt (LuCI > Services > OpenClash)
 ```
 
-`wharf-glinet-openclash` depends on `gl-sdk4-ui-core`, so it cannot be installed
+`wharf-openclash-glinet` depends on `gl-sdk4-ui-core`, so it cannot be installed
 on non-GL.iNet systems even though it is listed.
 
 ## Signature checking
@@ -46,7 +46,7 @@ is attached to every release as `wharf-usign.pub`.
 
 ## Removing
 
-`opkg remove wharf-glinet-openclash` removes only the panel entry. LuCI and
+`opkg remove wharf-openclash-glinet` removes only the panel entry. LuCI and
 OpenClash stay. Removing `luci-app-openclash` **deletes `/etc/openclash` and
 `/etc/config/openclash`** (upstream behaviour); back up first.
 

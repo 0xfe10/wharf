@@ -12,8 +12,8 @@ OpenWrt ルーター向けのプラグインライブラリです。GitHub Relea
 https://github.com/0xfe10/wharf/releases/latest/download
 ```
 
-- **GL.iNet 4.x:** 「アプリケーション > プラグイン」のカスタムソフトウェアソースに上の URL を追加し、プラグイン一覧から `wharf-glinet-openclash` をインストールします。
-- **その他の OpenWrt:** `/etc/opkg/customfeeds.conf` に `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` を追加し、`opkg update && opkg install wharf-openclash` を実行します。
+- **GL.iNet 4.x:** 「アプリケーション > プラグイン」のカスタムソフトウェアソースに上の URL を追加し、プラグイン一覧から `wharf-openclash-glinet` をインストールします。
+- **その他の OpenWrt:** `/etc/opkg/customfeeds.conf` に `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` を追加し、`opkg update && opkg install luci-compat luci-app-openclash` を実行します。
 
 詳細は [using-the-feed.md](../using-the-feed.md)(英語)を参照してください。
 

@@ -10,20 +10,21 @@
   },
   "packages": [
     {
-      "name": "wharf-openclash",
-      "version": "1.0.0-1",
-      "feed": "generic",
-      "depends": ["luci-app-openclash", "luci", "luci-compat", "luci-base"],
-      "description": "OpenClash with everything it needs (meta package)\nInstalls luci-app-openclash plus the LuCI base it requires. On any OpenWrt, open LuCI > Services > OpenClash afterwards."
-    },
-    {
-      "name": "wharf-glinet-openclash",
-      "version": "1.0.3-1",
+      "name": "wharf-openclash-glinet",
+      "version": "1.1.0-1",
       "feed": "glinet",
       "dir": "glinet",
-      "gzip": ["www/views/gl-sdk4-ui-openclash.common.js"],
-      "depends": ["wharf-openclash", "gl-sdk4-ui-core"],
-      "description": "OpenClash for GL.iNet 4.x firmware\nAdds an OpenClash entry under Applications in the GL.iNet admin panel, pulls in OpenClash and LuCI, and keeps /etc/openclash across firmware upgrades."
+      "gzip": [
+        "www/views/gl-sdk4-ui-openclash.common.js"
+      ],
+      "depends": [
+        "luci-app-openclash",
+        "luci",
+        "luci-compat",
+        "luci-base",
+        "gl-sdk4-ui-core"
+      ],
+      "description": "OpenClash for GL.iNet 4.x firmware\nAdds an OpenClash entry under Applications in the GL.iNet admin panel, installs OpenClash (luci-app-openclash) and LuCI, enables LuCI automatically, and keeps /etc/openclash across firmware upgrades."
     }
   ]
 }

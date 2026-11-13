@@ -17,9 +17,10 @@ https://github.com/0xfe10/wharf/releases/latest/download
 
 - **GL.iNet 4.x:** Applications > Packages > Manage sources: enter a name (e.g. `wharf`) and the URL,
   click the **+** icon next to the fields so it appears in the list, then **Apply**. Click
-  **Refresh**, search `wharf` and install `wharf-glinet-openclash`. Nothing needs to be done over SSH.
+  **Refresh**, search `wharf` and install `wharf-openclash-glinet`. Nothing needs to be done over SSH.
 - **Other OpenWrt:** `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` in `/etc/opkg/customfeeds.conf`, then
-  `opkg update && opkg install wharf-openclash`.
+  `opkg update && opkg install luci-compat luci-app-openclash`
+  (OpenClash itself, without a GL.iNet panel entry).
 
 The router downloads the feed itself, so `github.com` must be reachable from its network. If it is
 not (no proxy running yet), see the reachability notes in [docs/using-the-feed.md](docs/using-the-feed.md).

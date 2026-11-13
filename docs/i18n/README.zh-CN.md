@@ -12,8 +12,8 @@ OpenWrt 路由器的插件库:托管在 GitHub Releases 上的静态 **opkg 软�
 https://github.com/0xfe10/wharf/releases/latest/download
 ```
 
-- **GL.iNet 4.x:** 应用 > 插件 > 添加自定义软件源,填入上面的地址,然后在插件列表里安装 `wharf-glinet-openclash`。
-- **其他 OpenWrt:** 在 `/etc/opkg/customfeeds.conf` 中加入 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`,然后执行 `opkg update && opkg install wharf-openclash`。
+- **GL.iNet 4.x:** 应用 > 插件 > 添加自定义软件源,填入上面的地址,然后在插件列表里安装 `wharf-openclash-glinet`。
+- **其他 OpenWrt:** 在 `/etc/opkg/customfeeds.conf` 中加入 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`,然后执行 `opkg update && opkg install luci-compat luci-app-openclash`。
 
 详见 [using-the-feed.md](../using-the-feed.md)(英文)。
 
