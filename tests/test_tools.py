@@ -34,8 +34,8 @@ def tool(name, *args):
 
 def make_plugin(tmp, extra_pkg=None):
     pdir = os.path.join(tmp, "demo")
-    os.makedirs(os.path.join(pdir, "t", "root", "www", "views"))
-    os.makedirs(os.path.join(pdir, "t", "CONTROL"))
+    os.makedirs(os.path.join(pdir, "t", "root", "www", "views"), exist_ok=True)
+    os.makedirs(os.path.join(pdir, "t", "CONTROL"), exist_ok=True)
     with open(os.path.join(pdir, "t", "root", "www", "views", "v.js"), "w") as f:
         f.write("module.exports = {}\n")
     with open(os.path.join(pdir, "t", "CONTROL", "postinst"), "w") as f:
