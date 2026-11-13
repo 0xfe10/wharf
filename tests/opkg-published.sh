@@ -19,6 +19,14 @@ echo "key fingerprint: $fp"
 cp /tmp/wharf-usign.pub /etc/opkg/keys/$fp
 echo "src/gz wharf $URL" >> /etc/opkg/customfeeds.conf
 
+echo "--- diagnostics: fetching the feed index with the same client opkg uses"
+which wget uclient-fetch 2>/dev/null || true
+for u in "$URL/Packages.gz" "$(dirname "$URL")/download/v1.0.2/Packages.gz"; do
+  echo ">>> $u"
+  wget -O /tmp/diag.gz "$u" 2>&1 | tail -5 || true
+  echo "exit=$? size=$(wc -c < /tmp/diag.gz 2>/dev/null || echo none)"
+done
+echo "--- end diagnostics"
 out=$(opkg update 2>&1) || true
 echo "$out" | grep -i "wharf" || true
 echo "$out" | grep -qi "signature check failed" && { echo "signature check failed"; exit 1; }
