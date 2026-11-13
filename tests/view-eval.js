@@ -62,5 +62,14 @@ for (const file of views) {
     assert(hrefs.some((u) => u.includes(':9090/ui/zashboard/#/setup?hostname=')), 'zashboard link missing/wrong')
     hrefs.forEach((u) => assert(/^https?:\/\//.test(u), 'unexpected scheme in ' + u))
   }
+  // language follows the panel's vue-i18n locale
+  const expect = { 'zh-tw': '開啟 OpenClash 設定', 'zh-cn': '打开 OpenClash 设置', ja: 'OpenClash 設定を開く', de: 'OpenClash-Einstellungen öffnen', es: 'Abrir ajustes de OpenClash', it: 'Apri le impostazioni di OpenClash', en: 'Open OpenClash settings', 'zh-HK': '開啟 OpenClash 設定', fr: 'Open OpenClash settings' }
+  for (const [loc, label] of Object.entries(expect)) {
+    const c = load(file, { hostname: '192.168.20.1', protocol: 'http:' }, 'en-US')
+    const vm = instance(c); vm.$i18n = { locale: loc }
+    const labels = []
+    walk(c.render.call(vm, h), (n) => { if (n.tag === 'a') labels.push(n.children[0]) })
+    assert.strictEqual(labels[0], label, loc + ': ' + labels[0])
+  }
   console.log('ok  ' + path.relative(root, file))
 }
