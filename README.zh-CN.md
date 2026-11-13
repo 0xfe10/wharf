@@ -1,18 +1,18 @@
 # wharf
 
-OpenWrt 路由器的插件库:一个托管在 GitHub Pages 上的静态 **opkg 软件源**,
+OpenWrt 路由器的插件库:一个托管在 GitHub Releases 上的静态 **opkg 软件源**,
 加上针对特定固件的薄适配层。第一个插件是 [OpenClash](plugins/openclash/README.md)。
 
 [English](README.md)
 
 ## 使用
 
-软件源地址 `https://0xfe10.github.io/wharf/`:
+软件源以 GitHub Release 附件的形式发布(每个源一个 release,每次推送到 `main` 由 CI 更新):
 
 | 源 | 地址 | 适用 |
 |---|---|---|
-| generic | `https://0xfe10.github.io/wharf/opkg/generic` | 任何带 opkg 的 OpenWrt |
-| glinet | `https://0xfe10.github.io/wharf/opkg/glinet` | GL.iNet 4.x 固件(会在后台添加入口) |
+| generic | `https://github.com/0xfe10/wharf/releases/download/feed-generic` | 任何带 opkg 的 OpenWrt |
+| glinet | `https://github.com/0xfe10/wharf/releases/download/feed-glinet` | GL.iNet 4.x 固件(会在后台添加入口) |
 
 GL.iNet 用户在 应用 > 插件 > 添加自定义软件源 里把**两个源都加上**,然后在插件列表里
 安装 `wharf-glinet-openclash`。详见 [docs/using-the-feed.md](docs/using-the-feed.md)。

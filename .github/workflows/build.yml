@@ -38,20 +38,45 @@ jobs:
           find site -type f | sort
       - name: opkg round-trip in an OpenWrt container
         run: tests/opkg-install.sh site
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: site
           path: site
+          if-no-files-found: error
 
-  deploy:
+  publish:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-24.04
     permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: write
+    concurrency:
+      group: publish-feeds
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: site
+          path: site
+      - name: Publish each feed as the assets of release feed-<feed>
+        run: |
+          set -eu
+          for dir in site/opkg/*/; do
+            feed=$(basename "$dir")
+            tag="feed-$feed"
+            if ! gh release view "$tag" >/dev/null 2>&1; then
+              gh release create "$tag" --title "opkg feed: $feed" --latest=false \
+                --notes "Static opkg feed (\`$feed\`). Maintained by CI, do not edit by hand. See docs/using-the-feed.md."
+            fi
+            # packages first, index last, so the index never points at a missing file
+            gh release upload "$tag" "$dir"*.ipk --clobber
+            gh release upload "$tag" "$dir/Packages" "$dir/Packages.gz" --clobber
+            # drop assets that are no longer part of the feed
+            gh release view "$tag" --json assets --jq '.assets[].name' | while read -r name; do
+              [ -e "$dir/$name" ] || gh release delete-asset "$tag" "$name" --yes
+            done
+            echo "published $tag: $(ls "$dir" | wc -l) files"
+          done

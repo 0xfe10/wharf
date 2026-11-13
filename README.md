@@ -1,19 +1,19 @@
 # wharf
 
 A small plugin library for OpenWrt routers: a static **opkg feed** (hosted on
-GitHub Pages) plus thin adapters that make plugins show up nicely on specific
+GitHub Releases) plus thin adapters that make plugins show up nicely on specific
 firmwares. [OpenClash](plugins/openclash/README.md) is the first plugin.
 
 [中文说明](README.zh-CN.md)
 
 ## Use it
 
-Feeds are published at `https://0xfe10.github.io/wharf/`:
+Feeds are published as GitHub release assets (one release per feed, updated by CI on every push to `main`):
 
 | Feed | URL | For |
 |---|---|---|
-| generic | `https://0xfe10.github.io/wharf/opkg/generic` | any OpenWrt with opkg |
-| glinet | `https://0xfe10.github.io/wharf/opkg/glinet` | GL.iNet 4.x firmware (adds an admin-panel entry) |
+| generic | `https://github.com/0xfe10/wharf/releases/download/feed-generic` | any OpenWrt with opkg |
+| glinet | `https://github.com/0xfe10/wharf/releases/download/feed-glinet` | GL.iNet 4.x firmware (adds an admin-panel entry) |
 
 GL.iNet users add **both** feeds (Applications > Plugins > custom software
 source), then install `wharf-glinet-openclash` from the plugin list.
