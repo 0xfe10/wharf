@@ -23,9 +23,10 @@ EOF2
 : > /etc/opkg/customfeeds.conf
 # Stock OpenWrt enables check_signature; GL.iNet firmware does not. Mimic GL.iNet.
 sed -i "/check_signature/d" /etc/opkg.conf
-# The rootfs image may not list the architectures our all-arch packages need.
-grep -q "^arch all" /etc/opkg.conf /etc/opkg/*.conf 2>/dev/null || echo "arch all 100" >> /etc/opkg.conf
-grep -q "^arch noarch" /etc/opkg.conf /etc/opkg/*.conf 2>/dev/null || echo "arch noarch 100" >> /etc/opkg.conf
+# The rootfs image has no explicit architecture list; give opkg the system
+# architecture plus the architecture-independent ones our packages use.
+. /etc/openwrt_release
+printf "arch all 100\narch noarch 100\narch %s 200\n" "$DISTRIB_ARCH" >> /etc/opkg.conf
 opkg update
 
 for p in luci-app-openclash wharf-openclash wharf-glinet-openclash; do

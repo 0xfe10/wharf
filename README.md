@@ -4,7 +4,7 @@ A small plugin library for OpenWrt routers: a static **opkg feed** (hosted on
 GitHub Releases) plus thin adapters that make plugins show up nicely on specific
 firmwares. [OpenClash](plugins/openclash/README.md) is the first plugin.
 
-[中文说明](README.zh-CN.md)
+[简体中文](docs/i18n/README.zh-CN.md) · [繁體中文](docs/i18n/README.zh-TW.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md)
 
 ## Use it
 
