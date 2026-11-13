@@ -137,7 +137,7 @@ class RepoTests(unittest.TestCase):
         base = os.path.join(ROOT, "plugins", "openclash", "glinet")
         scripts = [os.path.join(base, "CONTROL", n) for n in sorted(os.listdir(os.path.join(base, "CONTROL")))]
         scripts.append(os.path.join(base, "root", "usr", "libexec", "wharf-openclash", "setup-luci"))
-        scripts += [os.path.join(ROOT, "tools", n) for n in ("build-pkg", "build-ipk", "make-feed")]
+        scripts += [os.path.join(ROOT, "tools", n) for n in ("build-pkg", "build-ipk", "make-feed", "build-usign", "sign-feed")]
         scripts.append(os.path.join(ROOT, "tests", "opkg-install.sh"))
         for s in scripts:
             r = subprocess.run(["sh", "-n", s], capture_output=True, text=True)

@@ -17,7 +17,7 @@ https://github.com/0xfe10/wharf/releases/latest/download
 
 詳見 [using-the-feed.md](../using-the-feed.md)(英文)。
 
-> 軟體套件沒有簽章。GL.iNet 的 opkg 不驗證簽章,但**原版 OpenWrt 會驗證**,在軟體來源被簽章之前會拒絕它。請只新增你信任的來源。
+> 軟體來源索引已用 usign 簽章(v1.0.1 起)。原版 OpenWrt 需要先匯入公鑰,見 [using-the-feed.md](../using-the-feed.md)(英文);GL.iNet 不驗證簽章。請只新增你信任的來源。
 
 ## 結構
 

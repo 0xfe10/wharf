@@ -17,7 +17,7 @@ https://github.com/0xfe10/wharf/releases/latest/download
 
 자세한 내용은 [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요.
 
-> 패키지에는 서명이 없습니다. GL.iNet의 opkg는 서명을 검증하지 않지만 **기본 OpenWrt는 검증하므로** 피드에 서명하기 전에는 거부됩니다. 신뢰할 수 있는 피드만 추가하세요.
+> 피드 인덱스는 usign으로 서명됩니다(v1.0.1부터). 기본 OpenWrt에서는 먼저 공개 키를 가져와야 합니다. [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요. GL.iNet은 서명을 검증하지 않습니다. 신뢰할 수 있는 피드만 추가하세요.
 
 ## 구조
 

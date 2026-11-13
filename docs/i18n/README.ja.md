@@ -17,7 +17,7 @@ https://github.com/0xfe10/wharf/releases/latest/download
 
 詳細は [using-the-feed.md](../using-the-feed.md)(英語)を参照してください。
 
-> パッケージには署名がありません。GL.iNet の opkg は署名を検証しませんが、**標準の OpenWrt は検証する**ため、フィードに署名するまで拒否されます。信頼できるフィードだけを追加してください。
+> フィードのインデックスは usign で署名されています(v1.0.1 以降)。標準の OpenWrt では先に公開鍵をインポートしてください。[using-the-feed.md](../using-the-feed.md)(英語)を参照。GL.iNet は署名を検証しません。信頼できるフィードだけを追加してください。
 
 ## 構成
 

@@ -16,6 +16,9 @@ port=${PORT:-8099}
 
 work=$(mktemp -d)
 srv=
+# With USIGN=<binary> the feeds are signed with a throwaway key and opkg keeps
+# check_signature on (like stock OpenWrt); without it the check is off (like GL.iNet).
+USIGN=${USIGN:-}
 trap 'kill $srv 2>/dev/null || true; rm -rf "$work"' EXIT
 
 mkdir -p "$work/serve" "$work/stub/stub"
@@ -30,15 +33,30 @@ for p in wharf-openclash gl-sdk4-ui-core; do
 done
 "$here/../tools/make-feed" "$work/serve/stubs" >/dev/null
 
+fp=
+if [ -n "$USIGN" ]; then
+	"$USIGN" -G -s "$work/test.key" -p "$work/serve/key.pub" -c "wharf test key"
+	fp=$("$USIGN" -F -p "$work/serve/key.pub")
+	"$here/../tools/sign-feed" "$USIGN" "$work/test.key" "$work/serve/feed" "$work/serve/stubs"
+	# tampered copy: modified index that no longer matches its signature
+	cp -R "$work/serve/feed" "$work/serve/tampered"
+	echo "# tampered" >> "$work/serve/tampered/Packages"
+fi
+
 python3 -m http.server "$port" --bind 127.0.0.1 --directory "$work/serve" >/dev/null 2>&1 &
 srv=$!
 sleep 1
 
-docker run --rm --network host -e PORT="$port" "$image" sh -eu -c '
+docker run --rm --network host -e PORT="$port" -e FP="$fp" "$image" sh -eu -c '
 mkdir -p /var/lock /var/run
 . /etc/openwrt_release
 # Stock OpenWrt enables check_signature; GL.iNet firmware does not. Mimic GL.iNet.
-sed -i "/check_signature/d" /etc/opkg.conf
+if [ -n "$FP" ]; then
+  wget -q -O /etc/opkg/keys/$FP http://127.0.0.1:$PORT/key.pub
+  grep -q check_signature /etc/opkg.conf || echo "option check_signature" >> /etc/opkg.conf
+else
+  sed -i "/check_signature/d" /etc/opkg.conf
+fi
 printf "arch all 100\narch noarch 100\narch %s 200\n" "$DISTRIB_ARCH" >> /etc/opkg.conf
 cat >> /etc/opkg/customfeeds.conf <<EOF2
 src/gz wharf http://127.0.0.1:$PORT/feed
@@ -66,5 +84,11 @@ test ! -e /usr/share/oui/menu.d/wharf-openclash.json
 test ! -e /www/views/gl-sdk4-ui-openclash.common.js.gz
 test ! -e /usr/libexec/wharf-openclash/setup-luci
 test ! -e /lib/upgrade/keep.d/wharf-openclash
+if [ -n "$FP" ]; then
+  # a modified index must be rejected
+  echo "src/gz tampered http://127.0.0.1:$PORT/tampered" > /etc/opkg/customfeeds.conf
+  if opkg update; then echo "tampered feed was accepted"; exit 1; fi
+  echo "tampered feed rejected"
+fi
 echo "opkg round-trip OK"
 '

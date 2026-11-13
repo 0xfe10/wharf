@@ -1,0 +1,13 @@
+#!/bin/sh
+# Build OpenWrt's usign from a pinned upstream commit (no dependencies beyond git and a C compiler).
+#   build-usign <out-dir>      prints the path of the usign binary
+set -eu
+[ $# -eq 1 ] || { echo "usage: build-usign <out-dir>" >&2; exit 2; }
+commit=c4c72b1b07945ee192361dc751291a7c98d6adcd
+mkdir -p "$1"; out=$(cd "$1" && pwd)
+work=$(mktemp -d); trap 'rm -rf "$work"' EXIT
+git clone -q https://git.openwrt.org/project/usign.git "$work/usign"
+git -C "$work/usign" checkout -q "$commit"
+cd "$work/usign"
+cc -O2 --std=gnu99 -o "$out/usign" ed25519.c edsign.c f25519.c fprime.c sha512.c main.c base64.c
+echo "$out/usign"

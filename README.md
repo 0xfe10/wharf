@@ -23,9 +23,9 @@ https://github.com/0xfe10/wharf/releases/latest/download
 
 Details: [docs/using-the-feed.md](docs/using-the-feed.md).
 
-> Packages are unsigned. GL.iNet's opkg does not enable signature checks, but **stock
-> OpenWrt does** and will reject this feed until it is signed (see
-> [docs/using-the-feed.md](docs/using-the-feed.md)). Only add feeds you trust.
+> From v1.0.1 the feed is signed (usign). Stock OpenWrt needs the public key imported
+> first, see [docs/using-the-feed.md](docs/using-the-feed.md); GL.iNet does not check signatures.
+> Only add feeds you trust.
 
 ## Layout
 

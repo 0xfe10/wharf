@@ -28,8 +28,24 @@ jobs:
           export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           tools/build-all --out site
           ls -l site/feed
-      - name: opkg round-trip in an OpenWrt container
+      - name: Build usign
+        run: echo "USIGN=$(tools/build-usign "$RUNNER_TEMP/usign")" >> "$GITHUB_ENV"
+      - name: opkg round-trip in an OpenWrt container (signature checking on)
         run: tests/opkg-install.sh site
+      - name: Sign the feed
+        env:
+          WHARF_USIGN_KEY: ${{ secrets.WHARF_USIGN_KEY }}
+        run: |
+          set -eu
+          [ -n "$WHARF_USIGN_KEY" ] || { echo "secret WHARF_USIGN_KEY is empty"; exit 1; }
+          key="$RUNNER_TEMP/wharf.key"
+          umask 077
+          printf '%s\n' "$WHARF_USIGN_KEY" > "$key"
+          tools/sign-feed "$USIGN" "$key" site/feed
+          rm -f "$key"
+          # the published signature must verify with the committed public key
+          "$USIGN" -V -p keys/wharf-usign.pub -m site/feed/Packages -x site/feed/Packages.sig
+          cp keys/wharf-usign.pub site/feed/wharf-usign.pub
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}

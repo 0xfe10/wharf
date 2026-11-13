@@ -1,0 +1,10 @@
+#!/bin/sh
+# Sign a feed's Packages file: writes Packages.sig next to it.
+#   sign-feed <usign-binary> <secret-key-file> <feed-dir>...
+set -eu
+[ $# -ge 3 ] || { echo "usage: sign-feed <usign> <secret-key-file> <feed-dir>..." >&2; exit 2; }
+usign=$1; key=$2; shift 2
+for d in "$@"; do
+	"$usign" -S -m "$d/Packages" -s "$key" -x "$d/Packages.sig"
+	echo "signed $d/Packages"
+done

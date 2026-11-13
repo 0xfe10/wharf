@@ -33,13 +33,19 @@ opkg install wharf-openclash          # any other OpenWrt (LuCI > Services > Ope
 `wharf-glinet-openclash` depends on `gl-sdk4-ui-core`, so it cannot be installed
 on non-GL.iNet systems even though it is listed.
 
-## Signature checking (stock OpenWrt)
+## Signature checking
 
-The feed is **unsigned**. GL.iNet firmware does not enable `check_signature`
-in `/etc/opkg.conf`, so it works there. Stock OpenWrt does, and `opkg update`
-will fail with "Signature file download failed". On stock OpenWrt you must remove
-the `option check_signature` line from `/etc/opkg.conf` (this lowers security for
-all feeds) until the feed is signed with usign.
+From v1.0.1 the feed index (`Packages`) is signed with usign; the signature is
+`Packages.sig` next to it. Stock OpenWrt checks signatures, so import the public
+key once (GL.iNet firmware does not check signatures and works without it):
+
+```sh
+wget -O /etc/opkg/keys/3b9c3e21277942f0 https://github.com/0xfe10/wharf/releases/latest/download/wharf-usign.pub
+```
+
+The key file name must be the key fingerprint, `3b9c3e21277942f0`. Compare it
+with `keys/wharf-usign.pub` in this repository before trusting it. The same file
+is attached to every release as `wharf-usign.pub`.
 
 ## Removing
 
