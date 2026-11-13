@@ -28,6 +28,11 @@ sed -i "/check_signature/d" /etc/opkg.conf
 . /etc/openwrt_release
 printf "arch all 100\narch noarch 100\narch %s 200\n" "$DISTRIB_ARCH" >> /etc/opkg.conf
 opkg update
+echo "--- debug: opkg.conf, architectures, our index stanza"
+cat /etc/opkg.conf
+opkg print-architecture || true
+grep -A11 "^Package: wharf-glinet-openclash" /var/opkg-lists/wharf_glinet | cat -A | head -14
+echo "--- end debug"
 
 for p in luci-app-openclash wharf-openclash wharf-glinet-openclash; do
   opkg list | grep -q "^$p - " || { echo "missing from feed: $p"; exit 1; }
