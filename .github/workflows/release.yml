@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -56,6 +57,10 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" site/feed/* \
             --title "$GITHUB_REF_NAME" --generate-notes --latest --verify-tag
+      - name: Publish the feed on GitHub Pages (reachable where github.com is not)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
 
   # What a router does, against the real public URL (redirects, https, signature).
   verify-published:
