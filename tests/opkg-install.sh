@@ -21,6 +21,8 @@ src/gz wharf_generic http://127.0.0.1:$PORT/opkg/generic
 src/gz wharf_glinet http://127.0.0.1:$PORT/opkg/glinet
 EOF2
 : > /etc/opkg/customfeeds.conf
+# Stock OpenWrt enables check_signature; GL.iNet firmware does not. Mimic GL.iNet.
+sed -i "/check_signature/d" /etc/opkg.conf
 opkg update
 
 for p in luci-app-openclash wharf-openclash wharf-glinet-openclash; do

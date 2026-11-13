@@ -28,6 +28,14 @@ opkg install wharf-glinet-openclash   # GL.iNet 4.x
 opkg install wharf-openclash          # any other OpenWrt (LuCI > Services > OpenClash)
 ```
 
+## Signature checking (stock OpenWrt)
+
+The feeds are **unsigned**. GL.iNet firmware does not enable `check_signature`
+in `/etc/opkg.conf`, so it works there. Stock OpenWrt does, and `opkg update`
+will fail with "Signature file download failed" for these feeds. On stock
+OpenWrt you must remove the `option check_signature` line from `/etc/opkg.conf`
+(this lowers security for all feeds) until the feeds are signed with usign.
+
 ## Removing
 
 `opkg remove wharf-glinet-openclash` removes only the panel entry. LuCI and

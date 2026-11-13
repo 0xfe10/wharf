@@ -17,7 +17,8 @@ OpenWrt 路由器的插件库:一个托管在 GitHub Releases 上的静态 **opk
 GL.iNet 用户在 应用 > 插件 > 添加自定义软件源 里把**两个源都加上**,然后在插件列表里
 安装 `wharf-glinet-openclash`。详见 [docs/using-the-feed.md](docs/using-the-feed.md)。
 
-> 软件包没有签名(GL.iNet 的 opkg 不校验签名),请只添加你信任的源。
+> 软件包没有签名。GL.iNet 的 opkg 不校验签名,但**原版 OpenWrt 会校验**,在源被签名之前会拒绝这些源(见
+> [docs/using-the-feed.md](docs/using-the-feed.md))。请只添加你信任的源。
 
 ## 结构
 

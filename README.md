@@ -19,8 +19,9 @@ GL.iNet users add **both** feeds (Applications > Plugins > custom software
 source), then install `wharf-glinet-openclash` from the plugin list.
 Details: [docs/using-the-feed.md](docs/using-the-feed.md).
 
-> Packages are unsigned (GL.iNet's opkg does not enable signature checks).
-> Only add feeds you trust.
+> Packages are unsigned. GL.iNet's opkg does not enable signature checks, but **stock
+> OpenWrt does** and will reject these feeds until they are signed (see
+> [docs/using-the-feed.md](docs/using-the-feed.md)). Only add feeds you trust.
 
 ## Layout
 
