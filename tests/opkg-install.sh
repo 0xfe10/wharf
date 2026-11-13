@@ -90,7 +90,12 @@ test ! -e /lib/upgrade/keep.d/wharf-openclash
 if [ -n "$FP" ]; then
   # a modified index must be rejected
   echo "src/gz tampered http://127.0.0.1:$PORT/tampered" > /etc/opkg/customfeeds.conf
-  if opkg update; then echo "tampered feed was accepted"; exit 1; fi
+  # opkg update may exit 0 even when a signature check fails, so check its output
+  # and that nothing from the tampered feed became installable.
+  out=$(opkg update 2>&1 || true)
+  echo "$out" | grep "tampered" || true
+  echo "$out" | grep -q "Signature check failed" || { echo "tampered feed was not rejected"; exit 1; }
+  if opkg list | grep -q "^wharf-glinet-openclash "; then echo "tampered package list was kept"; exit 1; fi
   echo "tampered feed rejected"
 fi
 echo "opkg round-trip OK"
