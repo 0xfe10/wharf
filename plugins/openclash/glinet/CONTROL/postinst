@@ -7,7 +7,8 @@
 
 # Bring LuCI up once opkg is idle. Detached: it must outlive this script and
 # must not hold opkg's stdout open. Progress: /tmp/wharf-openclash-luci.status
-if [ -x /usr/bin/init_luci.sh ]; then
+# (init_luci.sh is not executable on GL.iNet firmware: the panel runs it with `sh`, so test -f)
+if [ -f /usr/bin/init_luci.sh ]; then
 	nohup /usr/libexec/wharf-openclash/setup-luci >/dev/null 2>&1 </dev/null &
 fi
 exit 0

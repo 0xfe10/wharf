@@ -6,14 +6,14 @@ OpenWrt ルーター向けのプラグインライブラリです。GitHub Relea
 
 ## 使い方
 
-フィードは 1 つで、GitHub Release のアセットとして公開されます。各バージョン(`v1.0.0` など)の release にはすべてのパッケージと `Packages` / `Packages.gz` が含まれ、最新版は次の固定 URL から常に取得できます。
+フィードは 1 つで、GitHub Pages で公開されます(同じファイルは各バージョンの release にも添付されます)。この URL は常に最新版を指します。
 
 ```
-https://github.com/0xfe10/wharf/releases/latest/download
+https://0xfe10.github.io/wharf
 ```
 
 - **GL.iNet 4.x:** 「アプリケーション > プラグイン」のカスタムソフトウェアソースに上の URL を追加し、プラグイン一覧から `wharf-glinet-openclash` をインストールします。
-- **その他の OpenWrt:** `/etc/opkg/customfeeds.conf` に `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` を追加し、`opkg update && opkg install wharf-openclash` を実行します。
+- **その他の OpenWrt:** `/etc/opkg/customfeeds.conf` に `src/gz wharf https://0xfe10.github.io/wharf` を追加し、`opkg update && opkg install wharf-openclash` を実行します。
 
 詳細は [using-the-feed.md](../using-the-feed.md)(英語)を参照してください。
 

@@ -51,7 +51,7 @@ wait_opkg_idle() {
 
 echo running > "$STATUS"
 log "start"
-[ -x "$INIT_LUCI" ] || finish "failed: $INIT_LUCI not found (not GL.iNet 4.x firmware?)" 1
+[ -f "$INIT_LUCI" ] || finish "failed: $INIT_LUCI not found (not GL.iNet 4.x firmware?)" 1
 luci_ready && finish ok
 
 n=1

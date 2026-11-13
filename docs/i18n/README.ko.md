@@ -6,14 +6,14 @@ OpenWrt 라우터용 플러그인 라이브러리입니다. GitHub Releases에�
 
 ## 사용법
 
-피드는 하나이며 GitHub Release 자산으로 배포됩니다. 각 버전(`v1.0.0` 등)의 release에는 모든 패키지와 `Packages` / `Packages.gz`가 들어 있고, 최신 버전은 아래 고정 URL로 항상 받을 수 있습니다.
+피드는 하나이며 GitHub Pages에서 배포됩니다(같은 파일이 각 버전 release에도 첨부됩니다). 이 URL은 항상 최신 버전을 가리킵니다.
 
 ```
-https://github.com/0xfe10/wharf/releases/latest/download
+https://0xfe10.github.io/wharf
 ```
 
 - **GL.iNet 4.x:** '애플리케이션 > 플러그인'의 사용자 지정 소프트웨어 소스에 위 URL을 추가한 뒤 플러그인 목록에서 `wharf-glinet-openclash`를 설치합니다.
-- **그 밖의 OpenWrt:** `/etc/opkg/customfeeds.conf`에 `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download`를 추가하고 `opkg update && opkg install wharf-openclash`를 실행합니다.
+- **그 밖의 OpenWrt:** `/etc/opkg/customfeeds.conf`에 `src/gz wharf https://0xfe10.github.io/wharf`를 추가하고 `opkg update && opkg install wharf-openclash`를 실행합니다.
 
 자세한 내용은 [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요.
 

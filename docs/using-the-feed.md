@@ -3,28 +3,27 @@
 Feed URL (always the newest release):
 
 ```
-https://github.com/0xfe10/wharf/releases/latest/download
+https://0xfe10.github.io/wharf
 ```
 
-Each GitHub release `vX.Y.Z` contains every `.ipk` plus `Packages` and
-`Packages.gz`. A specific version is also available as
-`https://github.com/0xfe10/wharf/releases/download/vX.Y.Z` if you want to pin it.
+The same files are attached to each GitHub release `vX.Y.Z`. If `github.com` is reachable from your
+network, `https://0xfe10.github.io/wharf` works too, and `https://github.com/0xfe10/wharf/releases/download/vX.Y.Z` pins a
+version. Prefer the Pages URL: release downloads begin at `github.com`, which some networks block
+while `github.io` works.
 
 ## GL.iNet admin panel
 
-1. Applications > Plugins > scroll to the custom software source section > add
-   name `wharf`, URL `https://github.com/0xfe10/wharf/releases/latest/download`.
-2. Refresh the plugin list, search `wharf`, install `wharf-glinet-openclash`
-   (it pulls in `wharf-openclash`, `luci-app-openclash` and LuCI).
-3. A new **OpenClash** entry appears under Applications.
-
-If the plugin list does not show the packages after refreshing, use SSH (below)
-and tell us; the list is generated from `opkg` by GL.iNet's `update_plugins_db`.
+1. Applications > Packages > **Manage sources**.
+2. Name `wharf`, URL `https://0xfe10.github.io/wharf`, then click the **+** icon next to the fields (the entry must appear in
+   the list below), then **Apply**.
+3. Click **Refresh**, search `wharf`, install `wharf-glinet-openclash`
+   (it pulls in `wharf-openclash`, `luci-app-openclash` and LuCI; LuCI is enabled automatically).
+4. A new **OpenClash** entry appears under Applications.
 
 ## SSH / any OpenWrt
 
 ```sh
-echo 'src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download' >> /etc/opkg/customfeeds.conf
+echo 'src/gz wharf https://0xfe10.github.io/wharf' >> /etc/opkg/customfeeds.conf
 opkg update
 opkg install wharf-glinet-openclash   # GL.iNet 4.x
 opkg install wharf-openclash          # any other OpenWrt (LuCI > Services > OpenClash)
@@ -56,6 +55,6 @@ OpenClash stay. Removing `luci-app-openclash` **deletes `/etc/openclash` and
 ## Reachability
 
 The feed is downloaded by the router itself, before any proxy is running. If
-`github.com` is not reachable from your network, `opkg update` fails. A release
+`github.io` is not reachable from your network, `opkg update` fails. A release
 is a set of static files: you can mirror its assets to any web server or object
 storage and add that URL instead. Packages are unsigned: only use mirrors you control.

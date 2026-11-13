@@ -105,6 +105,21 @@ class SetupLuci(unittest.TestCase):
         self.assertEqual(self.calls(), 0)
         self.assertFalse(os.path.exists(os.path.join(self.t, "wharf-openclash-luci.status")))
 
+    def test_init_script_without_exec_bit_is_run_with_sh(self):
+        # GL.iNet ships /usr/bin/init_luci.sh as mode 644 and the panel runs it with `sh`
+        path = os.path.join(self.bin, "init_luci.sh")
+        os.chmod(path, 0o644)
+        r = self.run_script(WHARF_INIT_LUCI=path)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.status(), "ok")
+        self.assertEqual(self.calls(), 1)
+
+    def test_postinst_does_not_require_exec_bit(self):
+        with open(os.path.join(HERE, "..", "plugins", "openclash", "glinet", "CONTROL", "postinst")) as f:
+            text = f.read()
+        self.assertNotIn("-x /usr/bin/init_luci.sh", text)
+        self.assertIn("-f /usr/bin/init_luci.sh", text)
+
     def test_missing_init_script(self):
         r = self.run_script(WHARF_INIT_LUCI=os.path.join(self.t, "nope.sh"))
         self.assertEqual(r.returncode, 1)
