@@ -8,22 +8,21 @@ firmwares. [OpenClash](plugins/openclash/README.md) is the first plugin.
 
 ## Use it
 
-One feed, published on GitHub Pages (the same files are also attached to every GitHub release
-`vX.Y.Z`). The URL always serves the newest release:
+One feed, published as the assets of every GitHub release (`vX.Y.Z`). This URL always serves the
+newest release:
 
 ```
-https://0xfe10.github.io/wharf
+https://github.com/0xfe10/wharf/releases/latest/download
 ```
 
 - **GL.iNet 4.x:** Applications > Packages > Manage sources: enter a name (e.g. `wharf`) and the URL,
   click the **+** icon next to the fields so it appears in the list, then **Apply**. Click
   **Refresh**, search `wharf` and install `wharf-glinet-openclash`. Nothing needs to be done over SSH.
-- **Other OpenWrt:** `src/gz wharf https://0xfe10.github.io/wharf` in `/etc/opkg/customfeeds.conf`, then
+- **Other OpenWrt:** `src/gz wharf https://github.com/0xfe10/wharf/releases/latest/download` in `/etc/opkg/customfeeds.conf`, then
   `opkg update && opkg install wharf-openclash`.
 
-Why Pages and not release downloads: release downloads start at `github.com`, which some networks
-block while `github.io` works (this is the case on the test Mudi 7). The release URL
-`https://github.com/0xfe10/wharf/releases/latest/download` is an alternative where `github.com` is reachable.
+The router downloads the feed itself, so `github.com` must be reachable from its network. If it is
+not (no proxy running yet), see the reachability notes in [docs/using-the-feed.md](docs/using-the-feed.md).
 
 Details: [docs/using-the-feed.md](docs/using-the-feed.md).
 
