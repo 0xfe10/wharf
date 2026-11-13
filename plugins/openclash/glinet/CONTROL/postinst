@@ -1,14 +1,13 @@
 #!/bin/sh
-# wharf-glinet-openclash: make the new menu entry visible and LuCI reachable.
+# wharf-glinet-openclash (runs on the router, inside the opkg transaction).
 [ -n "${IPKG_INSTROOT}" ] && exit 0
 
 # Reload (not restart) GL.iNet's nginx so the new menu entry is picked up.
 [ -x /etc/init.d/nginx ] && /etc/init.d/nginx reload >/dev/null 2>&1
 
-# Expose LuCI on 8080/8443 the same way the panel's "Install LuCI" button does.
-# init_luci.sh calls opkg itself, so it must run after this opkg transaction
-# has released its lock: start it detached and let it wait.
-if [ -x /usr/bin/init_luci.sh ] && [ "$(uci -q get uhttpd.main.inited)" != "1" ] && [ ! -e /tmp/luci.lock ]; then
-	nohup sh -c 'sleep 15; sh /usr/bin/init_luci.sh web' >/tmp/wharf-openclash-luci.log 2>&1 </dev/null &
+# Bring LuCI up once opkg is idle. Detached: it must outlive this script and
+# must not hold opkg's stdout open. Progress: /tmp/wharf-openclash-luci.status
+if [ -x /usr/bin/init_luci.sh ]; then
+	nohup /usr/libexec/wharf-openclash/setup-luci >/dev/null 2>&1 </dev/null &
 fi
 exit 0

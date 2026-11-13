@@ -9,11 +9,13 @@ import argparse
 import html
 import os
 import shutil
+import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wharflib as w  # noqa: E402
 
+here = os.path.dirname(os.path.abspath(__file__))
 BASE_URL = "https://0xfe10.github.io/wharf"
 
 
@@ -59,11 +61,10 @@ def main():
             shutil.copy(src, feed_dir)
             ctl = w.read_ipk(src)["control"]
             index.setdefault(up["feed"], []).append((ctl["Package"], ctl["Version"]))
+        subprocess.run([os.path.join(here, "build-ipk"), p["name"], opkg], check=True, stdout=subprocess.DEVNULL)
         for pkg in p["packages"]:
-            w.build_package(p, pkg, os.path.join(opkg, pkg["feed"]))
             index.setdefault(pkg["feed"], []).append((pkg["name"], pkg["version"]))
-    for feed in index:
-        print("%s: %d package(s)" % (feed, w.make_feed(os.path.join(opkg, feed))))
+    subprocess.run([os.path.join(here, "make-feed")] + [os.path.join(opkg, f) for f in sorted(index)], check=True)
     with open(os.path.join(args.out, "index.html"), "w", encoding="utf-8") as f:
         f.write(index_html(index, args.base_url))
     open(os.path.join(args.out, ".nojekyll"), "w").close()

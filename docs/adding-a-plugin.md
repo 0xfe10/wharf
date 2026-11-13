@@ -27,6 +27,7 @@
      readable and testable in the repo).
    Packages must not overwrite files owned by firmware or other packages;
    `tests/test_tools.py` enforces an allow-list of install paths for GL.iNet packages.
+   Packages are built by `tools/build-pkg` (GNU tar + jq), i.e. in CI.
 4. Run the tests and `tools/build-all --out site`.
 
 Feeds are just directory names (`feed`): keep firmware-specific packages in

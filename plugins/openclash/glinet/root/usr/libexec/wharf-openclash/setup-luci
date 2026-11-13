@@ -1,0 +1,70 @@
+#!/bin/sh
+# Runs ON THE ROUTER, detached from the package's postinst.
+# Brings LuCI up on :8080/:8443 exactly like the GL.iNet panel's "Install LuCI"
+# (/usr/bin/init_luci.sh web), but only once opkg is idle, because init_luci.sh
+# runs opkg itself and the postinst runs while opkg still holds its lock.
+# Idempotent and safe to run by hand:  /usr/libexec/wharf-openclash/setup-luci
+#
+# Result:  cat /tmp/wharf-openclash-luci.status   (running | ok | failed: ...)
+# Log:     /tmp/wharf-openclash-luci.log
+
+# The defaults are the real router paths; the environment overrides exist so
+# tests/test_setup_luci.py can run this script against stubs.
+STATE=${WHARF_STATE_DIR:-/tmp}
+LOG=$STATE/wharf-openclash-luci.log
+STATUS=$STATE/wharf-openclash-luci.status
+LOCKDIR=$STATE/wharf-openclash-setup.lock
+INIT_LUCI=${WHARF_INIT_LUCI:-/usr/bin/init_luci.sh}
+LUCI_LIB=${WHARF_LUCI_LIB:-/usr/lib/lua/luci}
+WAIT_OPKG=${WHARF_WAIT_OPKG:-600}   # seconds to wait for opkg to become idle
+ATTEMPTS=${WHARF_ATTEMPTS:-3}
+SETTLE=${WHARF_SETTLE:-3}
+RETRY_PAUSE=${WHARF_RETRY_PAUSE:-10}
+POLL=${WHARF_POLL:-2}
+UP_TRIES=${WHARF_UP_TRIES:-15}       # polls for uhttpd to listen after init_luci.sh
+
+log() { echo "$(date '+%F %T') $*" >> "$LOG"; }
+
+mkdir "$LOCKDIR" 2>/dev/null || { log "another run is active, exiting"; exit 0; }
+trap 'rmdir "$LOCKDIR" 2>/dev/null' EXIT
+
+finish() { echo "$1" > "$STATUS"; log "result: $1"; exit "${2:-0}"; }
+
+opkg_busy() { pidof opkg >/dev/null 2>&1 || [ -e "${WHARF_LUCI_LOCK:-/tmp/luci.lock}" ]; }
+luci_listening() { netstat -ln 2>/dev/null | grep -qE '[:.]8080[[:space:]]'; }
+luci_ready() {
+	[ "$(uci -q get uhttpd.main.inited)" = "1" ] && [ -d "$LUCI_LIB" ] && luci_listening
+}
+
+wait_opkg_idle() {
+	waited=0
+	while :; do
+		if ! opkg_busy; then
+			sleep "$SETTLE"                 # let a follow-up opkg call (GL plugin bookkeeping) start
+			opkg_busy || return 0
+		fi
+		[ "$waited" -lt "$WAIT_OPKG" ] || return 1
+		sleep "$POLL"
+		waited=$((waited + POLL))
+	done
+}
+
+echo running > "$STATUS"
+log "start"
+[ -x "$INIT_LUCI" ] || finish "failed: $INIT_LUCI not found (not GL.iNet 4.x firmware?)" 1
+luci_ready && finish ok
+
+n=1
+while [ "$n" -le "$ATTEMPTS" ]; do
+	wait_opkg_idle || finish "failed: opkg stayed busy for ${WAIT_OPKG}s (stale /tmp/luci.lock?)" 1
+	log "attempt $n: init_luci.sh web"
+	sh "$INIT_LUCI" web >> "$LOG" 2>&1
+	rc=$?
+	i=0
+	while [ "$i" -lt "$UP_TRIES" ] && ! luci_listening; do sleep "$POLL"; i=$((i + 1)); done
+	luci_ready && finish ok
+	log "attempt $n did not bring LuCI up (init_luci.sh exit $rc)"
+	n=$((n + 1))
+	sleep "$RETRY_PAUSE"
+done
+finish "failed: LuCI did not come up after $ATTEMPTS attempts, see $LOG" 1

@@ -1,24 +1,25 @@
-#!/usr/bin/env python3
-"""Generate Packages and Packages.gz for one or more feed directories.
+#!/bin/sh
+# Generate Packages and Packages.gz for each directory of .ipk files.
+#   make-feed <feed-dir>...
+set -eu
+[ $# -ge 1 ] || { echo "usage: make-feed <feed-dir>..." >&2; exit 2; }
+tar --version 2>/dev/null | grep -q 'GNU tar' || { echo "error: GNU tar is required" >&2; exit 1; }
 
-  make-feed site/opkg/generic site/opkg/glinet
-"""
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import wharflib as w  # noqa: E402
-
-
-def main():
-    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
-        sys.exit(__doc__)
-    for d in sys.argv[1:]:
-        print("%s: %d package(s)" % (d, w.make_feed(d)))
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except w.WharfError as e:
-        sys.exit("error: %s" % e)
+for d in "$@"; do
+	: > "$d/Packages"
+	n=0
+	for f in "$d"/*.ipk; do
+		[ -e "$f" ] || continue
+		[ "$n" -eq 0 ] || echo >> "$d/Packages"
+		ctl=$(gzip -dc "$f" | tar -xOf - ./control.tar.gz | gzip -dc | tar -xOf - ./control)
+		{
+			printf '%s\n' "$ctl"
+			echo "Filename: $(basename "$f")"
+			echo "Size: $(wc -c < "$f" | tr -d ' ')"
+			echo "SHA256sum: $(sha256sum "$f" | cut -d' ' -f1)"
+		} >> "$d/Packages"
+		n=$((n + 1))
+	done
+	gzip -9 -n -c "$d/Packages" > "$d/Packages.gz"
+	echo "$d: $n package(s)"
+done

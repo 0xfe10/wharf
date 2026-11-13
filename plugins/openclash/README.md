@@ -14,9 +14,18 @@ shipped here is a small status page with buttons that open OpenClash's own
 LuCI page (`:8080`/`:8443`) and its dashboards (`:9090`). There is no iframe:
 LuCI would be cross-origin and mixed-content (https panel, http LuCI).
 
-`postinst` reloads nginx and, if LuCI is not initialised, runs GL.iNet's own
-`/usr/bin/init_luci.sh web` detached (it calls opkg, so it must wait for this
-transaction to finish). Log: `/tmp/wharf-openclash-luci.log`.
+`postinst` (runs on the router) reloads nginx and starts
+`/usr/libexec/wharf-openclash/setup-luci` detached. That script brings LuCI up
+with GL.iNet's own `/usr/bin/init_luci.sh web`, which calls opkg and therefore
+cannot run while the installing opkg holds its lock. Instead of a fixed delay it:
+
+- waits (up to 10 min) until no `opkg` process and no `/tmp/luci.lock` exist,
+- skips everything if LuCI is already initialised and listening on 8080,
+- runs `init_luci.sh`, then checks that LuCI really listens; retries up to 3 times,
+- is idempotent and can be re-run by hand if it failed.
+
+Check the outcome: `cat /tmp/wharf-openclash-luci.status` (`running`, `ok` or
+`failed: ...`), details in `/tmp/wharf-openclash-luci.log`.
 
 ## Things to know
 
@@ -42,7 +51,8 @@ Not yet done. Work through in order; each step says how to roll back.
    `/usr/share/oui/menu.d/wharf-openclash.json` and
    `/www/views/gl-sdk4-ui-openclash.common.js.gz`, then `/etc/init.d/nginx reload`.)*
 4. Does `http://<router>:8080` (LuCI) open and does the settings button work?
-   Check `cat /tmp/wharf-openclash-luci.log`.
+   Check `cat /tmp/wharf-openclash-luci.status` and the log; if it says
+   `failed`, send the log and re-run `/usr/libexec/wharf-openclash/setup-luci`.
 5. In LuCI import a subscription, start OpenClash, open the dashboard links.
 6. After a firmware upgrade: are the packages reinstalled and is `/etc/openclash` kept?
 7. Does anything conflict with GL.iNet VPN / firewall features while OpenClash runs?

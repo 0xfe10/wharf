@@ -26,7 +26,7 @@ plugins/<名称>/
   plugin.json          上游来源、包定义
   upstream.lock.json   固定的上游版本(tag、URL、sha256)
   <目标固件>/          一种固件的适配层:CONTROL/ 脚本 + root/ 文件
-tools/                 fetch-upstream、build-ipk、make-feed、build-all(仅 Python 标准库)
+tools/                 build-pkg、build-ipk、make-feed(sh + GNU tar + jq)、fetch-upstream、build-all(Python 标准库)
 tests/                 单元测试、页面文件加载测试(node)、opkg 安装卸载测试(docker)
 .github/workflows/     构建发布、每周检查上游新版本
 docs/                  软件源用法、如何新增插件
@@ -35,13 +35,13 @@ docs/                  软件源用法、如何新增插件
 ## 开发
 
 ```bash
-python3 -m unittest discover tests -v   # 工具和打包测试
+python3 -m unittest discover tests -v   # 工具、打包、setup-luci 测试
 node tests/view-eval.js                 # 检查 GL.iNet 页面文件能作为 Vue 组件加载
 tools/build-all --out site              # 本地构建整个软件源
 tests/opkg-install.sh site              # 安装/卸载往返测试(需要 docker)
 ```
 
-构建可复现(设置 `SOURCE_DATE_EPOCH`)。上游包原样转存,且只有在 sha256 与仓库里提交的
+打包在 CI(Linux:GNU tar、gzip、jq)里完成;在 macOS 上打包相关测试会被跳过,其余照常运行。构建可复现(`SOURCE_DATE_EPOCH`)。上游包原样转存,且只有在 sha256 与仓库里提交的
 锁文件一致时才会发布。新增插件见 [docs/adding-a-plugin.md](docs/adding-a-plugin.md)。
 
 ## 状态

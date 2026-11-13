@@ -1,28 +1,13 @@
-#!/usr/bin/env python3
-"""Build the ipk packages that a plugin defines itself (no upstream download).
-
-  build-ipk --plugin openclash [--out DIR]
-"""
-import argparse
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import wharflib as w  # noqa: E402
-
-
-def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--plugin", required=True)
-    ap.add_argument("--out", default=os.path.join(w.ROOT, "build", "ipk"))
-    args = ap.parse_args()
-    plugin = w.load_plugin(os.path.join(w.ROOT, "plugins", args.plugin))
-    for pkg in plugin["packages"]:
-        print(w.build_package(plugin, pkg, os.path.join(args.out, pkg["feed"])))
-
-
-if __name__ == "__main__":
-    try:
-        main()
-    except w.WharfError as e:
-        sys.exit("error: %s" % e)
+#!/bin/sh
+# Build every package a plugin defines (not the mirrored upstream ones).
+# Each ipk goes to <out>/<feed>/.      build-ipk <plugin-name> [out-dir]
+set -eu
+here=$(cd "$(dirname "$0")" && pwd)
+[ $# -ge 1 ] || { echo "usage: build-ipk <plugin-name> [out-dir]" >&2; exit 2; }
+plugin=$1
+out=${2:-$here/../build/ipk}
+dir=$here/../plugins/$plugin
+[ -f "$dir/plugin.json" ] || { echo "error: no such plugin: $plugin" >&2; exit 1; }
+jq -r '.packages[] | "\(.name) \(.feed)"' "$dir/plugin.json" | while read -r name feed; do
+	"$here/build-pkg" "$dir" "$name" "$out/$feed"
+done

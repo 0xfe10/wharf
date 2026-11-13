@@ -1,0 +1,88 @@
+#!/bin/sh
+# Build one ipk from a plugin's plugin.json. Runs in CI (Linux): needs GNU tar,
+# gzip and jq. Output is reproducible (sorted entries, fixed owner/mtime, gzip -n).
+#
+#   build-pkg <plugin-dir> <package-name> <out-dir>      prints the ipk path
+set -eu
+
+[ $# -eq 3 ] || { echo "usage: build-pkg <plugin-dir> <package> <out-dir>" >&2; exit 2; }
+tar --version 2>/dev/null | grep -q 'GNU tar' || { echo "error: GNU tar is required" >&2; exit 1; }
+command -v jq >/dev/null || { echo "error: jq is required" >&2; exit 1; }
+
+plugin_dir=$(cd "$1" && pwd)
+pkg=$2
+mkdir -p "$3"
+out=$(cd "$3" && pwd)
+epoch=${SOURCE_DATE_EPOCH:-1700000000}
+spec=$plugin_dir/plugin.json
+
+die() { echo "error: $*" >&2; exit 1; }
+get() { jq -r --arg n "$pkg" ".packages[] | select(.name==\$n) | $1" "$spec"; }
+safe_rel() { case "$1" in /*|*..*) die "unsafe path in plugin.json: $1";; esac; }
+
+plugin=$(jq -r .name "$spec")
+version=$(get '.version')
+[ -n "$version" ] || die "package $pkg not found in $spec"
+arch=$(get '.architecture // "all"')
+section=$(get '.section // "wharf"')
+feed=$(get '.feed')
+dir=$(get '.dir // ""')
+depends=$(get '(.depends // []) | join(", ")')
+desc=$(get '.description')
+gzips=$(get '(.gzip // [])[]')
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+mkdir "$work/data" "$work/control"
+
+if [ -n "$dir" ]; then
+	safe_rel "$dir"
+	base=$plugin_dir/$dir
+	[ -d "$base" ] || die "missing directory $base"
+	[ -d "$base/root" ] && cp -R "$base/root/." "$work/data/"
+	if [ -d "$base/CONTROL" ]; then
+		for f in "$base"/CONTROL/*; do
+			[ -e "$f" ] || continue
+			n=$(basename "$f")
+			case "$n" in preinst|postinst|prerm|postrm|conffiles) ;; *) die "unexpected file in CONTROL: $n";; esac
+			cp "$f" "$work/control/$n"
+			if [ "$n" = conffiles ]; then chmod 644 "$work/control/$n"; else chmod 755 "$work/control/$n"; fi
+		done
+	fi
+fi
+
+[ -z "$(find "$work/data" -type l)" ] || die "symlinks are not allowed in package data"
+
+for g in $gzips; do
+	safe_rel "$g"
+	[ -f "$work/data/$g" ] || die "gzip entry $g not found"
+	gzip -9 -n -c "$work/data/$g" > "$work/data/$g.gz"
+	rm "$work/data/$g"
+done
+
+find "$work/data" -type d -exec chmod 755 {} +
+find "$work/data" -type f -perm -100 -exec chmod 755 {} +
+find "$work/data" -type f ! -perm -100 -exec chmod 644 {} +
+
+size=$(find "$work/data" -type f -exec cat {} + | wc -c | tr -d ' ')
+{
+	echo "Package: $pkg"
+	echo "Version: $version"
+	[ -z "$depends" ] || echo "Depends: $depends"
+	echo "Source: https://github.com/0xfe10/wharf/tree/main/plugins/$plugin"
+	echo "Section: $section"
+	echo "Maintainer: Wharf <https://github.com/0xfe10/wharf>"
+	echo "Architecture: $arch"
+	echo "Installed-Size: $size"
+	printf '%s\n' "$desc" | awk 'NR==1{print "Description: " $0; next} {print " " ($0=="" ? "." : $0)}'
+} > "$work/control/control"
+chmod 644 "$work/control/control"
+
+mk() { tar --format=gnu --sort=name --owner=0 --group=0 --numeric-owner --mtime="@$epoch" "$@" | gzip -9 -n; }
+(cd "$work/data" && mk -cf - .) > "$work/data.tar.gz"
+(cd "$work/control" && mk -cf - .) > "$work/control.tar.gz"
+printf '2.0\n' > "$work/debian-binary"
+
+ipk=$out/${pkg}_${version}_${arch}.ipk
+(cd "$work" && mk -cf - ./debian-binary ./data.tar.gz ./control.tar.gz) > "$ipk"
+echo "$ipk"

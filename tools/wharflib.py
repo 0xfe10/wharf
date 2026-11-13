@@ -1,5 +1,5 @@
-"""Shared helpers for the wharf build tools (Python standard library only)."""
-import gzip
+"""Shared helpers: plugin spec validation, ipk reading (for tests/verification) and
+upstream fetching. Packaging itself is done by tools/build-pkg and tools/make-feed (sh)."""
 import hashlib
 import io
 import json
@@ -10,28 +10,14 @@ import urllib.parse
 import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_EPOCH = 1700000000
-MAINTAINER = "Wharf <https://github.com/0xfe10/wharf>"
 NAME_RE = re.compile(r"^[a-z0-9][a-z0-9.+_-]*$")
 VERSION_RE = re.compile(r"^[0-9][A-Za-z0-9.+~_-]*$")
-SCRIPT_NAMES = ("preinst", "postinst", "prerm", "postrm", "conffiles")
-CONTROL_ORDER = ("Package", "Version", "Depends", "Source", "Section", "Maintainer",
-                 "Architecture", "Installed-Size", "Description")
 MAX_DOWNLOAD = 200 * 1024 * 1024
 UA = "wharf-build/1.0 (+https://github.com/0xfe10/wharf)"
 
 
 class WharfError(Exception):
     pass
-
-
-def epoch():
-    value = os.environ.get("SOURCE_DATE_EPOCH")
-    if value:
-        if not value.isdigit():
-            raise WharfError("SOURCE_DATE_EPOCH must be an integer")
-        return int(value)
-    return DEFAULT_EPOCH
 
 
 def sha256_file(path):
@@ -102,127 +88,6 @@ def iter_plugins(root=ROOT):
             if os.path.isfile(os.path.join(base, d, "plugin.json"))]
 
 
-# ------------------------------------------------------------------ ipk writing
-
-def _tar_bytes(entries, mtime):
-    """entries: list of (name, data|None, mode, is_dir). Returns gzip'd tar bytes."""
-    raw = io.BytesIO()
-    with tarfile.open(fileobj=raw, mode="w", format=tarfile.GNU_FORMAT) as tf:
-        for name, data, mode, is_dir in entries:
-            ti = tarfile.TarInfo(name)
-            ti.mtime = mtime
-            ti.uid = ti.gid = 0
-            ti.uname = ti.gname = ""
-            ti.mode = mode
-            if is_dir:
-                ti.type = tarfile.DIRTYPE
-                tf.addfile(ti)
-            else:
-                ti.size = len(data)
-                tf.addfile(ti, io.BytesIO(data))
-    out = io.BytesIO()
-    with gzip.GzipFile(filename="", fileobj=out, mode="wb", compresslevel=9, mtime=0) as gz:
-        gz.write(raw.getvalue())
-    return out.getvalue()
-
-
-def _collect_data(root_dir, gzip_list):
-    files = {}
-    dirs = set()
-    if not os.path.isdir(root_dir):
-        return files, dirs
-    for cur, dnames, fnames in os.walk(root_dir):
-        dnames.sort()
-        rel_cur = os.path.relpath(cur, root_dir)
-        for d in dnames:
-            full = os.path.join(cur, d)
-            if os.path.islink(full):
-                raise WharfError("symlinks are not allowed: %s" % full)
-        for fn in fnames:
-            full = os.path.join(cur, fn)
-            if os.path.islink(full):
-                raise WharfError("symlinks are not allowed: %s" % full)
-            rel = fn if rel_cur == "." else "%s/%s" % (rel_cur, fn)
-            rel = rel.replace(os.sep, "/")
-            with open(full, "rb") as f:
-                data = f.read()
-            mode = 0o755 if os.stat(full).st_mode & 0o111 else 0o644
-            files[rel] = (data, mode)
-    for g in gzip_list:
-        if g not in files:
-            raise WharfError("gzip entry %s not found under %s" % (g, root_dir))
-        data, mode = files.pop(g)
-        files[g + ".gz"] = (gzip.compress(data, 9, mtime=0), mode)
-    for rel in files:
-        parts = rel.split("/")[:-1]
-        for i in range(1, len(parts) + 1):
-            dirs.add("/".join(parts[:i]))
-    return files, dirs
-
-
-def render_control(fields):
-    lines = []
-    for key in CONTROL_ORDER:
-        if key not in fields or fields[key] in ("", None):
-            continue
-        value = str(fields[key])
-        if key == "Description":
-            first, *rest = value.split("\n")
-            lines.append("Description: " + first)
-            lines.extend(" " + (r if r.strip() else ".") for r in rest)
-        else:
-            lines.append("%s: %s" % (key, value))
-    return "\n".join(lines) + "\n"
-
-
-def build_package(plugin, pkg, outdir, mtime=None):
-    mtime = epoch() if mtime is None else mtime
-    pdir = plugin["_dir"]
-    base = os.path.join(pdir, pkg["dir"]) if pkg.get("dir") else None
-    files, dirs = ({}, set())
-    scripts = {}
-    if base:
-        files, dirs = _collect_data(os.path.join(base, "root"), pkg.get("gzip", []))
-        ctl = os.path.join(base, "CONTROL")
-        if os.path.isdir(ctl):
-            for fn in sorted(os.listdir(ctl)):
-                if fn not in SCRIPT_NAMES:
-                    raise WharfError("unexpected file in CONTROL: %s" % fn)
-                with open(os.path.join(ctl, fn), "rb") as f:
-                    scripts[fn] = f.read()
-    installed = sum(len(d) for d, _ in files.values())
-    fields = {
-        "Package": pkg["name"],
-        "Version": pkg["version"],
-        "Depends": ", ".join(pkg.get("depends", [])),
-        "Source": "https://github.com/0xfe10/wharf/tree/main/plugins/" + plugin["name"],
-        "Section": pkg.get("section", "wharf"),
-        "Maintainer": MAINTAINER,
-        "Architecture": pkg.get("architecture", "all"),
-        "Installed-Size": installed,
-        "Description": pkg["description"],
-    }
-    ctl_entries = [("./control", render_control(fields).encode(), 0o644, False)]
-    for fn, data in sorted(scripts.items()):
-        ctl_entries.append(("./" + fn, data, 0o644 if fn == "conffiles" else 0o755, False))
-    data_entries = [("./", None, 0o755, True)]
-    for d in sorted(dirs):
-        data_entries.append(("./" + d, None, 0o755, True))
-    for rel in sorted(files):
-        data, mode = files[rel]
-        data_entries.append(("./" + rel, data, mode, False))
-    outer = [
-        ("./debian-binary", b"2.0\n", 0o644, False),
-        ("./data.tar.gz", _tar_bytes(data_entries, mtime), 0o644, False),
-        ("./control.tar.gz", _tar_bytes(ctl_entries, mtime), 0o644, False),
-    ]
-    os.makedirs(outdir, exist_ok=True)
-    out = os.path.join(outdir, "%s_%s_%s.ipk" % (pkg["name"], pkg["version"], fields["Architecture"]))
-    with open(out, "wb") as f:
-        f.write(_tar_bytes(outer, mtime))
-    return out
-
-
 # ------------------------------------------------------------------ ipk reading
 
 def parse_control(text):
@@ -271,40 +136,6 @@ def read_ipk(path):
             data.append({"name": m.name, "dir": m.isdir(), "mode": m.mode, "size": m.size,
                          "uid": m.uid, "gid": m.gid})
     return {"control": control, "scripts": scripts, "data": data}
-
-
-# ------------------------------------------------------------------- feed index
-
-def make_feed(feed_dir):
-    """Write Packages and Packages.gz for every .ipk in feed_dir. Returns stanza count."""
-    stanzas = []
-    for fn in sorted(os.listdir(feed_dir)):
-        if not fn.endswith(".ipk"):
-            continue
-        path = os.path.join(feed_dir, fn)
-        control = read_ipk(path)["control"]
-        control = dict(control)
-        control["Filename"] = fn
-        control["Size"] = str(os.path.getsize(path))
-        control["SHA256sum"] = sha256_file(path)
-        keys = [k for k in CONTROL_ORDER if k in control]
-        keys += [k for k in ("Filename", "Size", "SHA256sum")]
-        out = []
-        for k in keys:
-            v = control[k]
-            if k == "Description":
-                first, *rest = v.split("\n")
-                out.append("Description: " + first)
-                out.extend(" " + (r if r.strip() else ".") for r in rest)
-            else:
-                out.append("%s: %s" % (k, v))
-        stanzas.append("\n".join(out) + "\n")
-    text = "\n".join(stanzas)
-    with open(os.path.join(feed_dir, "Packages"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(text)
-    with open(os.path.join(feed_dir, "Packages.gz"), "wb") as f:
-        f.write(gzip.compress(text.encode("utf-8"), 9, mtime=0))
-    return len(stanzas)
 
 
 # ------------------------------------------------------------- upstream fetching
