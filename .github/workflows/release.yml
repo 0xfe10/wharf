@@ -2,7 +2,7 @@ name: release
 
 # Push a tag like v1.0.0 to publish: the GitHub release (title = tag) holds every
 # package plus Packages / Packages.gz / Packages.sig, and becomes "latest". Routers use
-# https://github.com/0xfe10/wharf/releases/latest/download as the opkg feed.
+# https://0xfe10.github.io/wharf as the opkg feed (the pages workflow publishes the latest release there).
 on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]

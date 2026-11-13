@@ -39,7 +39,7 @@ From v1.0.1 the feed index (`Packages`) is signed with usign; the signature is
 key once (GL.iNet firmware does not check signatures and works without it):
 
 ```sh
-wget -O /etc/opkg/keys/3b9c3e21277942f0 https://github.com/0xfe10/wharf/releases/latest/download/wharf-usign.pub
+wget -O /etc/opkg/keys/3b9c3e21277942f0 https://0xfe10.github.io/wharf/wharf-usign.pub
 ```
 
 The key file name must be the key fingerprint, `3b9c3e21277942f0`. Compare it
