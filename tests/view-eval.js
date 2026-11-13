@@ -58,12 +58,12 @@ for (const file of views) {
     const hrefs = []
     walk(tree, (n) => { if (n.tag === 'a') hrefs.push(n.data.attrs.href) })
     assert(hrefs.includes(expectLuci), 'LuCI link missing/wrong: ' + hrefs.join(', '))
-    assert(hrefs.some((u) => u.includes(':9090/ui/metacubexd/#/setup?hostname=')), 'dashboard link missing/wrong: ' + hrefs.join(', '))
-    assert(hrefs.some((u) => u.includes(':9090/ui/zashboard/#/setup?hostname=')), 'zashboard link missing/wrong')
+    assert.strictEqual(hrefs.length, 2, 'expected exactly two links: ' + hrefs.join(', '))
+    assert(hrefs.some((u) => /^http:\/\/[^/]+:9090\/ui\/zashboard\/$/.test(u)), 'zashboard link missing/wrong: ' + hrefs.join(', '))
     hrefs.forEach((u) => assert(/^https?:\/\//.test(u), 'unexpected scheme in ' + u))
   }
   // language follows the panel's vue-i18n locale
-  const expect = { 'zh-tw': '開啟 OpenClash 設定', 'zh-cn': '打开 OpenClash 设置', ja: 'OpenClash 設定を開く', de: 'OpenClash-Einstellungen öffnen', es: 'Abrir ajustes de OpenClash', it: 'Apri le impostazioni di OpenClash', en: 'Open OpenClash settings', 'zh-HK': '開啟 OpenClash 設定', fr: 'Open OpenClash settings' }
+  const expect = { 'zh-tw': 'OpenClash 設定', 'zh-cn': 'OpenClash 设置', ja: 'OpenClash 設定', de: 'OpenClash-Einstellungen', es: 'Ajustes de OpenClash', it: 'Impostazioni di OpenClash', en: 'OpenClash settings', 'zh-HK': 'OpenClash 設定', fr: 'OpenClash settings' }
   for (const [loc, label] of Object.entries(expect)) {
     const c = load(file, { hostname: '192.168.20.1', protocol: 'http:' }, 'en-US')
     const vm = instance(c); vm.$i18n = { locale: loc }

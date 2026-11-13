@@ -10,7 +10,7 @@
 GL.iNet's panel (OUI) lists menu entries from `/usr/share/oui/menu.d/*.json`
 and loads each page from `/www/views/gl-sdk4-ui-<view>.common.js(.gz)`. The page
 shipped here is a small status page with buttons that open OpenClash's own
-LuCI page (`:8080`/`:8443`) and its dashboards (`:9090`). There is no iframe:
+LuCI page (`:8080`/`:8443`) and the Zashboard dashboard (`:9090`). There is no iframe:
 LuCI would be cross-origin and mixed-content (https panel, http LuCI).
 
 `postinst` (runs on the router) reloads nginx and starts
@@ -47,8 +47,8 @@ Check the outcome: `cat /tmp/wharf-openclash-luci.status` (`running`, `ok` or
   the Mudi 7 (firmware 4.10.0) or the wharf feed: `python3 tests/check-glinet-deps.py`.
   `gl-sdk4-ui-core` is part of the firmware image and in no feed.
 - The panel page is evaluated like the panel does (`tests/view-eval.js`); its links follow
-  OpenClash's own URL scheme (`/cgi-bin/luci/admin/services/openclash`, `/ui/<dashboard>/#/setup?...`),
-  taken from the OpenClash 0.48.002 sources.
+  OpenClash's own URL scheme (`/cgi-bin/luci/admin/services/openclash`), taken from the OpenClash 0.48.002 sources. Zashboard
+  ignores address parameters in its URL (verified), so the page tells the user to enter Host and Dashboard Secret.
 - `setup-luci` (waiting for opkg, retrying, status file) against stub commands.
 
 What no CI can check: GL.iNet's own firmware code (plugin list, menu loading, `init_luci.sh`,
@@ -69,6 +69,6 @@ Not yet done. Work through in order; each step says how to roll back.
 4. Does `http://<router>:8080` (LuCI) open and does the settings button work?
    Check `cat /tmp/wharf-openclash-luci.status` and the log; if it says
    `failed`, send the log and re-run `/usr/libexec/wharf-openclash/setup-luci`.
-5. In LuCI import a subscription, start OpenClash, open the dashboard links.
+5. In LuCI import a subscription, start OpenClash, open the Zashboard button (Host = the router, Password = the Dashboard Secret).
 6. After a firmware upgrade: are the packages reinstalled and is `/etc/openclash` kept?
 7. Does anything conflict with GL.iNet VPN / firewall features while OpenClash runs?

@@ -166,7 +166,7 @@ class RepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r = tool("build-ipk", "openclash", tmp)
             self.assertEqual(r.returncode, 0, r.stderr)
-            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-openclash-glinet_1.1.0-1_all.ipk"))
+            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-openclash-glinet_1.1.1-1_all.ipk"))
             names = [d["name"] for d in info["data"]]
             for want in ("./www/views/gl-sdk4-ui-openclash.common.js.gz",
                          "./usr/share/oui/menu.d/wharf-openclash.json",
