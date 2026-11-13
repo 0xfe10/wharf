@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Build the complete static opkg site from every plugin under plugins/.
+
+  build-all [--out site] [--build build] [--plugin NAME]
+
+Output layout:  <out>/opkg/<feed>/{*.ipk,Packages,Packages.gz}  and  <out>/index.html
+"""
+import argparse
+import html
+import os
+import shutil
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wharflib as w  # noqa: E402
+
+BASE_URL = "https://0xfe10.github.io/wharf"
+
+
+def index_html(feeds, base_url):
+    rows = []
+    for feed, pkgs in sorted(feeds.items()):
+        rows.append("<h2>%s</h2><pre>src/gz wharf_%s %s/opkg/%s</pre><ul>" % (
+            html.escape(feed), html.escape(feed), html.escape(base_url), html.escape(feed)))
+        for name, version in sorted(pkgs):
+            rows.append("<li>%s %s</li>" % (html.escape(name), html.escape(version)))
+        rows.append("</ul>")
+    return ("<!doctype html><meta charset=utf-8><title>wharf</title>"
+            "<h1>wharf opkg feeds</h1>"
+            "<p>Add a feed under <b>Applications &rarr; Plugins &rarr; custom software source</b> "
+            "(GL.iNet) or in <code>/etc/opkg/customfeeds.conf</code>. "
+            "Docs: <a href=\"https://github.com/0xfe10/wharf\">github.com/0xfe10/wharf</a>.</p>"
+            + "".join(rows) +
+            "<p>Packages mirrored from upstream keep their upstream licence "
+            "(OpenClash: MIT, <a href=\"https://github.com/vernesong/OpenClash\">vernesong/OpenClash</a>).</p>")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--out", default=os.path.join(w.ROOT, "site"))
+    ap.add_argument("--build", default=os.path.join(w.ROOT, "build"))
+    ap.add_argument("--plugin")
+    ap.add_argument("--base-url", default=BASE_URL)
+    args = ap.parse_args()
+
+    plugins = [p for p in w.iter_plugins() if args.plugin in (None, p["name"])]
+    if not plugins:
+        sys.exit("no plugins found")
+    if os.path.isdir(args.out):
+        shutil.rmtree(args.out)
+    opkg = os.path.join(args.out, "opkg")
+    index = {}
+    for p in plugins:
+        up = p.get("upstream")
+        if up:
+            src = w.fetch_locked(p, os.path.join(args.build, "upstream", p["name"]))
+            feed_dir = os.path.join(opkg, up["feed"])
+            os.makedirs(feed_dir, exist_ok=True)
+            shutil.copy(src, feed_dir)
+            ctl = w.read_ipk(src)["control"]
+            index.setdefault(up["feed"], []).append((ctl["Package"], ctl["Version"]))
+        for pkg in p["packages"]:
+            w.build_package(p, pkg, os.path.join(opkg, pkg["feed"]))
+            index.setdefault(pkg["feed"], []).append((pkg["name"], pkg["version"]))
+    for feed in index:
+        print("%s: %d package(s)" % (feed, w.make_feed(os.path.join(opkg, feed))))
+    with open(os.path.join(args.out, "index.html"), "w", encoding="utf-8") as f:
+        f.write(index_html(index, args.base_url))
+    open(os.path.join(args.out, ".nojekyll"), "w").close()
+    print("site written to %s" % args.out)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except w.WharfError as e:
+        sys.exit("error: %s" % e)

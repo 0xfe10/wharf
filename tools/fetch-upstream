@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Download the pinned upstream release of a plugin, or move the pin forward.
+
+  fetch-upstream [--plugin NAME] [--dest DIR]   download the pinned asset (sha256 verified)
+  fetch-upstream --check  [--plugin NAME]       report whether a newer release exists (exit 10 if so)
+  fetch-upstream --update [--plugin NAME]       rewrite upstream.lock.json to the latest release
+"""
+import argparse
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wharflib as w  # noqa: E402
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--plugin", help="plugin name (default: all with an upstream)")
+    ap.add_argument("--dest", default=os.path.join(w.ROOT, "build", "upstream"))
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--check", action="store_true")
+    mode.add_argument("--update", action="store_true")
+    args = ap.parse_args()
+
+    plugins = [p for p in w.iter_plugins() if p.get("upstream") and args.plugin in (None, p["name"])]
+    if not plugins:
+        sys.exit("no matching plugin with an upstream section")
+    newer = False
+    for p in plugins:
+        if args.check or args.update:
+            changed, old, new = w.update_lock(p, write=args.update)
+            if changed:
+                newer = True
+                print("%s: %s -> %s%s" % (p["name"], old, new, " (lock updated)" if args.update else ""))
+            else:
+                print("%s: up to date (%s)" % (p["name"], new))
+        else:
+            path = w.fetch_locked(p, os.path.join(args.dest, p["name"]))
+            print(path)
+    if args.check and newer:
+        sys.exit(10)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except w.WharfError as e:
+        sys.exit("error: %s" % e)

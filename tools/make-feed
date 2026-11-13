@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""Generate Packages and Packages.gz for one or more feed directories.
+
+  make-feed site/opkg/generic site/opkg/glinet
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wharflib as w  # noqa: E402
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
+        sys.exit(__doc__)
+    for d in sys.argv[1:]:
+        print("%s: %d package(s)" % (d, w.make_feed(d)))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except w.WharfError as e:
+        sys.exit("error: %s" % e)

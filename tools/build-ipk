@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+"""Build the ipk packages that a plugin defines itself (no upstream download).
+
+  build-ipk --plugin openclash [--out DIR]
+"""
+import argparse
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import wharflib as w  # noqa: E402
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--plugin", required=True)
+    ap.add_argument("--out", default=os.path.join(w.ROOT, "build", "ipk"))
+    args = ap.parse_args()
+    plugin = w.load_plugin(os.path.join(w.ROOT, "plugins", args.plugin))
+    for pkg in plugin["packages"]:
+        print(w.build_package(plugin, pkg, os.path.join(args.out, pkg["feed"])))
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except w.WharfError as e:
+        sys.exit("error: %s" % e)

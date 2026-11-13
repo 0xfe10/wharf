@@ -1,0 +1,5 @@
+#!/bin/sh
+# Leaves LuCI and OpenClash installed; only the panel entry goes away.
+[ -n "${IPKG_INSTROOT}" ] && exit 0
+[ -x /etc/init.d/nginx ] && /etc/init.d/nginx reload >/dev/null 2>&1
+exit 0

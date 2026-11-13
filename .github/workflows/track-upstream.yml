@@ -1,0 +1,48 @@
+name: track-upstream
+
+# Weekly: if a plugin's upstream published a new release, open a PR that moves
+# plugins/<name>/upstream.lock.json. Nothing is published until that PR is merged.
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Move the lock forward
+        id: lock
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          tools/fetch-upstream --update | tee update.log
+          {
+            echo "summary<<EOF"
+            cat update.log
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          rm update.log
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/upstream-update
+          commit-message: "chore: update upstream pins"
+          title: "chore: update upstream pins"
+          body: |
+            Automated upstream bump (checksums taken from the GitHub release digest
+            and re-verified against the downloaded file).
+
+            ```
+            ${{ steps.lock.outputs.summary }}
+            ```
+
+            Review the upstream release notes before merging; merging publishes it.
+          add-paths: plugins/*/upstream.lock.json

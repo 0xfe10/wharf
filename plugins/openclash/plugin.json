@@ -1,0 +1,29 @@
+{
+  "name": "openclash",
+  "description": "OpenClash (mihomo/Clash client with a LuCI UI) as a one-click plugin",
+  "homepage": "https://github.com/vernesong/OpenClash",
+  "upstream": {
+    "repo": "vernesong/OpenClash",
+    "asset": "^luci-app-openclash_.+_all\\.ipk$",
+    "package": "luci-app-openclash",
+    "feed": "generic"
+  },
+  "packages": [
+    {
+      "name": "wharf-openclash",
+      "version": "1.0.0-1",
+      "feed": "generic",
+      "depends": ["luci-app-openclash", "luci", "luci-compat", "luci-base"],
+      "description": "OpenClash with everything it needs (meta package)\nInstalls luci-app-openclash plus the LuCI base it requires. On any OpenWrt, open LuCI > Services > OpenClash afterwards."
+    },
+    {
+      "name": "wharf-glinet-openclash",
+      "version": "1.0.0-1",
+      "feed": "glinet",
+      "dir": "glinet",
+      "gzip": ["www/views/gl-sdk4-ui-openclash.common.js"],
+      "depends": ["wharf-openclash", "gl-sdk4-ui-core"],
+      "description": "OpenClash for GL.iNet 4.x firmware\nAdds an OpenClash entry under Applications in the GL.iNet admin panel, pulls in OpenClash and LuCI, and keeps /etc/openclash across firmware upgrades."
+    }
+  ]
+}
