@@ -1,7 +1,7 @@
 name: verify-feed
 
-# Re-check the PUBLISHED feed the way a router uses it (https, redirects, signature,
-# downloads). Manual, and weekly to notice changes on GitHub's side.
+# Re-check the PUBLISHED release (signature with the public key in keys/, checksums, install
+# metadata) in an OpenWrt container. Manual, and weekly to notice changes on GitHub's side.
 on:
   workflow_dispatch:
   schedule:
@@ -15,14 +15,4 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - name: Pin the addresses this runner can reach (the container resolver sometimes returns unreachable ones)
-        run: |
-          set -eu
-          url=https://github.com/0xfe10/wharf/releases/latest/download/Packages.gz
-          gh_ip=$(curl -sS -o /dev/null --connect-timeout 15 -w '%{remote_ip}' "$url")
-          asset_url=$(curl -sS -o /dev/null --connect-timeout 15 -L -w '%{url_effective}' "$url")
-          asset_host=$(echo "$asset_url" | sed -E 's#^https://([^/]+)/.*#\1#')
-          asset_ip=$(curl -sS -o /dev/null --connect-timeout 15 -L -w '%{remote_ip}' "$url")
-          echo "github.com=$gh_ip $asset_host=$asset_ip"
-          echo "ADD_HOSTS=--add-host github.com:$gh_ip --add-host $asset_host:$asset_ip" >> "$GITHUB_ENV"
       - run: tests/opkg-published.sh
