@@ -86,6 +86,19 @@ test -f /www/views/gl-sdk4-ui-openclash.common.js.gz
 gzip -t /www/views/gl-sdk4-ui-openclash.common.js.gz
 test -x /usr/libexec/wharf-openclash/setup-luci
 test -f /lib/upgrade/keep.d/wharf-openclash
+test -x /usr/libexec/wharf-openclash/heal-dns
+test -x /etc/init.d/wharf-openclash-guard
+# postinst: the wharf key is trusted (copied, not owned by the package), the feed line exists
+# exactly once, and the boot guard is enabled before dnsmasq (START=19)
+cmp /usr/share/wharf-openclash/keys/3b9c3e21277942f0 /etc/opkg/keys/3b9c3e21277942f0
+test -L /etc/rc.d/S18wharf-openclash-guard
+test "$(grep -cF https://0xfe10.github.io/wharf /etc/opkg/customfeeds.conf)" = 1
+# reinstalling must not duplicate the feed line
+opkg install --force-reinstall wharf-openclash-glinet
+test "$(grep -cF https://0xfe10.github.io/wharf /etc/opkg/customfeeds.conf)" = 1
+test -L /etc/rc.d/S18wharf-openclash-guard
+# no OpenClash service script and no leftovers here: the guard must do nothing and exit 0
+/usr/libexec/wharf-openclash/heal-dns run
 
 opkg remove wharf-openclash-glinet
 # removing the adapter leaves OpenClash itself installed
@@ -94,6 +107,11 @@ test ! -e /usr/share/oui/menu.d/wharf-openclash.json
 test ! -e /www/views/gl-sdk4-ui-openclash.common.js.gz
 test ! -e /usr/libexec/wharf-openclash/setup-luci
 test ! -e /lib/upgrade/keep.d/wharf-openclash
+test ! -e /usr/libexec/wharf-openclash/heal-dns
+test ! -e /etc/init.d/wharf-openclash-guard
+test ! -L /etc/rc.d/S18wharf-openclash-guard
+# removing the adapter keeps the user'"'"'s trust in the wharf key
+test -f /etc/opkg/keys/3b9c3e21277942f0
 if [ -n "$FP" ]; then
   # a modified index must be rejected
   echo "src/gz tampered http://127.0.0.1:$PORT/tampered" > /etc/opkg/customfeeds.conf

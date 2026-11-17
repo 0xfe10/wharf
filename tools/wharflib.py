@@ -68,6 +68,8 @@ def load_plugin(plugin_dir):
             _check_rel(p["dir"], "dir")
         for g in p.get("gzip", []):
             _check_rel(g, "gzip entry")
+        for k in p.get("usign_keys", []):
+            _check_rel(k, "usign key")
     up = spec.get("upstream")
     if up:
         for key in ("repo", "asset", "package", "feed"):

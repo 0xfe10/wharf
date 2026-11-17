@@ -1,0 +1,119 @@
+#!/bin/sh
+# Runs ON THE ROUTER. Undoes OpenClash's DNS takeover when OpenClash itself is gone.
+#
+# Why: after a GL.iNet firmware upgrade /etc/config/dhcp is kept but the OpenClash
+# package is not (it is only reinstalled later, if at all). dnsmasq is then left with
+# `server 127.0.0.1#<dns_port>` and `noresolv 1`, nothing answers on that port, and the
+# whole LAN loses DNS while pinging IP addresses still works.
+#
+# It acts only when ALL of these hold:
+#   - the OpenClash service script (/etc/init.d/openclash) does not exist
+#   - dnsmasq has the server entry 127.0.0.1#<OpenClash dns_port> (default 7874)
+#   - nothing is listening on that port
+# and it removes only what OpenClash itself adds, the way OpenClash's own stop does:
+# that one server entry (the original servers OpenClash saved are put back), noresolv/
+# resolvfile when no server is left, cachesize/filter_aaaa when OpenClash saved them, its
+# /tmp/dnsmasq.d files and its firewall include. Other DNS settings are never touched.
+#
+#   heal-dns boot   called by /etc/init.d/wharf-openclash-guard before dnsmasq starts
+#   heal-dns run    by hand: also restarts dnsmasq and reloads the firewall
+#
+# Log: syslog (logread -e wharf-openclash-guard) and /tmp/wharf-openclash-guard.log
+# Exit status is always 0 so it can never hold up the boot.
+
+MODE=${1:-run}
+
+# The defaults are the real router paths; the environment overrides exist so
+# tests/test_heal_dns.py can run this script against stubs.
+INITD=${WHARF_INITD:-/etc/init.d}
+INIT=$INITD/openclash
+DNSMASQ_D=${WHARF_DNSMASQ_D:-/tmp/dnsmasq.d}
+LOG=${WHARF_GUARD_LOG:-/tmp/wharf-openclash-guard.log}
+RESOLV_CANDIDATES=${WHARF_RESOLV_CANDIDATES:-"/tmp/resolv.conf.d/resolv.conf.auto /tmp/resolv.conf.auto"}
+
+log() {
+	logger -t wharf-openclash-guard "$*" 2>/dev/null
+	echo "$(date '+%F %T') $*" >> "$LOG" 2>/dev/null
+}
+
+[ -e "$INIT" ] && exit 0        # OpenClash is installed and manages its own DNS
+
+port=$(uci -q get openclash.config.dns_port)
+case "$port" in ''|*[!0-9]*) port=7874;; esac
+leftover="127.0.0.1#$port"
+
+found=0
+for s in $(uci -q get 'dhcp.@dnsmasq[0].server'); do
+	[ "$s" = "$leftover" ] && found=1
+done
+[ "$found" = 1 ] || exit 0      # no OpenClash entry in dnsmasq: nothing to do
+
+if netstat -ln 2>/dev/null | grep -qE "[:.]$port[[:space:]]"; then
+	log "something listens on $port although $INIT is missing; leaving DNS alone"
+	exit 0
+fi
+
+log "OpenClash is gone ($INIT missing) but dnsmasq still forwards to $leftover: cleaning up ($MODE)"
+
+# 1. the forwarder, then the servers OpenClash saved from before it took over
+uci -q del_list "dhcp.@dnsmasq[0].server=$leftover"
+for s in $(uci -q get openclash.config.dnsmasq_server); do
+	uci -q add_list "dhcp.@dnsmasq[0].server=$s"
+	log "restored saved upstream server $s"
+done
+
+# 2. without any upstream server dnsmasq must read the ISP/WAN resolvers again
+saved_noresolv=$(uci -q get openclash.config.dnsmasq_noresolv)
+# (OpenClash saved the original noresolv: 0 means it was off. Unknown: only act if no server is left.)
+if [ -z "$(uci -q get 'dhcp.@dnsmasq[0].server')" ] || [ "$saved_noresolv" = 0 ]; then
+	if [ "$(uci -q get 'dhcp.@dnsmasq[0].noresolv')" = 1 ] || [ -z "$(uci -q get 'dhcp.@dnsmasq[0].resolvfile')" ]; then
+		uci -q set 'dhcp.@dnsmasq[0].noresolv=0'
+		resolv=$(uci -q get openclash.config.dnsmasq_resolvfile)
+		[ -n "$resolv" ] && grep -q nameserver "$resolv" 2>/dev/null || resolv=
+		if [ -z "$resolv" ]; then
+			for f in $RESOLV_CANDIDATES; do
+				if grep -q nameserver "$f" 2>/dev/null; then resolv=$f; break; fi
+			done
+		fi
+		[ -n "$resolv" ] || resolv=$(echo "$RESOLV_CANDIDATES" | cut -d' ' -f1)
+		uci -q set "dhcp.@dnsmasq[0].resolvfile=$resolv"
+		uci -q set 'dhcp.@dnsmasq[0].localuse=1'
+		log "dnsmasq reads its upstream servers from $resolv again"
+	fi
+fi
+
+# 3. cache size / AAAA filter, only if OpenClash had changed and saved them
+if [ "$(uci -q get openclash.config.cachesize_dns)" = 1 ]; then
+	v=$(uci -q get openclash.config.dnsmasq_cachesize)
+	[ -n "$v" ] && uci -q set "dhcp.@dnsmasq[0].cachesize=$v"
+fi
+if [ "$(uci -q get openclash.config.filter_aaaa_dns)" = 1 ]; then
+	v=$(uci -q get openclash.config.dnsmasq_filter_aaaa)
+	[ -n "$v" ] && uci -q set "dhcp.@dnsmasq[0].filter_aaaa=$v"
+fi
+
+# 4. OpenClash's own bookkeeping, so a later reinstall saves the current values again
+if [ -n "$(uci -q get openclash.config)" ]; then
+	uci -q set openclash.config.redirect_dns=0
+	uci -q set openclash.config.cachesize_dns=0
+	uci -q set openclash.config.filter_aaaa_dns=0
+	uci -q delete openclash.config.dnsmasq_server
+	uci -q commit openclash
+fi
+
+# 5. its dnsmasq snippets and its firewall include (only if it is the one OpenClash wrote)
+rm -f "$DNSMASQ_D"/dnsmasq_openclash_*.conf
+fw=0
+if [ "$(uci -q get firewall.openclash.path)" = /var/etc/openclash.include ]; then
+	uci -q delete firewall.openclash
+	uci -q commit firewall
+	fw=1
+fi
+uci -q commit dhcp
+
+if [ "$MODE" = run ]; then
+	"$INITD/dnsmasq" restart >/dev/null 2>&1
+	[ "$fw" = 1 ] && "$INITD/firewall" reload >/dev/null 2>&1
+fi
+log "done"
+exit 0

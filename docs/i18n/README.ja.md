@@ -17,7 +17,9 @@ https://0xfe10.github.io/wharf
 
 詳細は [using-the-feed.md](../using-the-feed.md)(英語)を参照してください。
 
-> フィードのインデックスは usign で署名されています(v1.0.1 以降)。標準の OpenWrt では先に公開鍵をインポートしてください。[using-the-feed.md](../using-the-feed.md)(英語)を参照。GL.iNet は署名を検証しません。信頼できるフィードだけを追加してください。
+> フィードのインデックスは usign で署名されています(v1.0.1 以降)。標準の OpenWrt では先に公開鍵をインポートしてください。[using-the-feed.md](../using-the-feed.md)(英語)を参照。GL.iNet ファームウェア 4.10.0 は署名を検証しませんが、**4.10.2 は検証します**。SSH で一度だけ公開鍵をインポートしてください(管理画面からはできません)。信頼できるフィードだけを追加してください。
+>
+> `wharf-openclash-glinet` 1.2.0 以降は、ファームウェア更新後もフィード、公開鍵、OpenClash のデータが保持され、更新で OpenClash が削除された場合は起動時のガードが DNS を修復します(詳細と制限は英語の [Firmware upgrades](../using-the-feed.md#firmware-upgrades-gl-inet) を参照。更新前に 1.2.0 以降がインストール済みである必要があります)。
 
 ## 構成
 

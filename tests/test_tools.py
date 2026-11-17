@@ -1,3 +1,4 @@
+import base64
 import gzip
 import json
 import os
@@ -122,7 +123,57 @@ class SpecTests(unittest.TestCase):
                     w.load_plugin(pdir)
 
 
+def usign_fingerprint(pub_path):
+    """usign key fingerprint: the 8 key-number bytes after the 2-byte algorithm id."""
+    with open(pub_path) as f:
+        payload = base64.b64decode(f.read().splitlines()[1])
+    assert payload[:2] == b"Ed", "not an usign public key"
+    return payload[2:10].hex()
+
+
+KEY_PUB = os.path.join(ROOT, "keys", "wharf-usign.pub")
+KEY_FINGERPRINT = usign_fingerprint(KEY_PUB)
+GLINET = os.path.join(ROOT, "plugins", "openclash", "glinet")
+
+
 class RepoTests(unittest.TestCase):
+    def test_key_fingerprint_is_the_documented_one(self):
+        # docs, keep.d and the firmware's key lookup all use this file name
+        self.assertEqual(KEY_FINGERPRINT, "3b9c3e21277942f0")
+
+    def test_keep_list_survives_what_an_upgrade_removes(self):
+        with open(os.path.join(GLINET, "root", "lib", "upgrade", "keep.d", "wharf-openclash")) as f:
+            keep = f.read().split()
+        for want in ("/etc/openclash/", "/etc/config/openclash",
+                     "/etc/opkg/customfeeds.conf",                       # the wharf feed line
+                     "/etc/opkg/keys/%s" % KEY_FINGERPRINT,              # its signing key
+                     "/etc/init.d/wharf-openclash-guard",                # the DNS guard, its boot link, its script
+                     "/etc/rc.d/S18wharf-openclash-guard",
+                     "/usr/libexec/wharf-openclash/heal-dns"):
+            self.assertIn(want, keep)
+        # every kept guard file exists in the package (the rc.d link is created by postinst)
+        for rel in ("etc/init.d/wharf-openclash-guard", "usr/libexec/wharf-openclash/heal-dns"):
+            self.assertTrue(os.path.isfile(os.path.join(GLINET, "root", rel)), rel)
+
+    def test_guard_start_order_matches_its_rc_link(self):
+        with open(os.path.join(GLINET, "root", "etc", "init.d", "wharf-openclash-guard")) as f:
+            self.assertRegex(f.read(), r"(?m)^START=18$")   # keep.d lists S18wharf-openclash-guard
+
+    def test_package_spec_ships_the_key_from_keys_dir(self):
+        pkg = w.load_plugin(os.path.join(ROOT, "plugins", "openclash"))["packages"][0]
+        self.assertEqual(pkg["usign_keys"], ["keys/wharf-usign.pub"])
+
+    def test_postinst_sets_up_key_feed_and_guard(self):
+        with open(os.path.join(GLINET, "CONTROL", "postinst")) as f:
+            text = f.read()
+        self.assertIn("/etc/opkg/keys", text)
+        self.assertIn('grep -qF "$FEED_URL" /etc/opkg/customfeeds.conf', text)   # idempotent, no duplicates
+        self.assertIn("FEED_URL=https://0xfe10.github.io/wharf", text)
+        self.assertIn('echo "src/gz wharf $FEED_URL" >> /etc/opkg/customfeeds.conf', text)
+        self.assertIn("wharf-openclash-guard enable", text)
+        with open(os.path.join(GLINET, "CONTROL", "prerm")) as f:
+            self.assertIn("wharf-openclash-guard disable", f.read())
+
     def test_plugins_load_and_locks_valid(self):
         plugins = w.iter_plugins()
         self.assertTrue(plugins)
@@ -136,7 +187,9 @@ class RepoTests(unittest.TestCase):
     def test_scripts_have_valid_shell_syntax(self):
         base = os.path.join(ROOT, "plugins", "openclash", "glinet")
         scripts = [os.path.join(base, "CONTROL", n) for n in sorted(os.listdir(os.path.join(base, "CONTROL")))]
-        scripts.append(os.path.join(base, "root", "usr", "libexec", "wharf-openclash", "setup-luci"))
+        for rel in ("usr/libexec/wharf-openclash/setup-luci", "usr/libexec/wharf-openclash/heal-dns",
+                    "etc/init.d/wharf-openclash-guard"):
+            scripts.append(os.path.join(base, "root", *rel.split("/")))
         scripts += [os.path.join(ROOT, "tools", n) for n in ("build-pkg", "build-ipk", "make-feed", "build-usign", "sign-feed")]
         scripts.append(os.path.join(ROOT, "tests", "opkg-install.sh"))
         for s in scripts:
@@ -153,7 +206,8 @@ class RepoTests(unittest.TestCase):
     def test_glinet_sources_stay_in_allowed_paths(self):
         # Static check of the source tree (works on any OS): the adapter may only
         # install under these paths so it can never overwrite firmware files.
-        allowed = ("usr/share/oui/menu.d/", "www/views/", "lib/upgrade/keep.d/", "usr/libexec/wharf-openclash/")
+        allowed = ("usr/share/oui/menu.d/", "www/views/", "lib/upgrade/keep.d/", "usr/libexec/wharf-openclash/",
+                   "etc/init.d/wharf-openclash-guard")
         base = os.path.join(ROOT, "plugins", "openclash", "glinet", "root")
         for cur, _, files in os.walk(base):
             for fn in files:
@@ -166,15 +220,21 @@ class RepoTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             r = tool("build-ipk", "openclash", tmp)
             self.assertEqual(r.returncode, 0, r.stderr)
-            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-openclash-glinet_1.1.1-1_all.ipk"))
+            info = w.read_ipk(os.path.join(tmp, "glinet", "wharf-openclash-glinet_1.2.0-1_all.ipk"))
             names = [d["name"] for d in info["data"]]
             for want in ("./www/views/gl-sdk4-ui-openclash.common.js.gz",
                          "./usr/share/oui/menu.d/wharf-openclash.json",
                          "./usr/libexec/wharf-openclash/setup-luci",
-                         "./lib/upgrade/keep.d/wharf-openclash"):
+                         "./lib/upgrade/keep.d/wharf-openclash",
+                         "./usr/libexec/wharf-openclash/heal-dns",
+                         "./etc/init.d/wharf-openclash-guard",
+                         "./usr/share/wharf-openclash/keys/%s" % KEY_FINGERPRINT):
                 self.assertIn(want, names)
             mode = {d["name"]: d["mode"] for d in info["data"]}
             self.assertEqual(mode["./usr/libexec/wharf-openclash/setup-luci"], 0o755)
+            self.assertEqual(mode["./usr/libexec/wharf-openclash/heal-dns"], 0o755)
+            self.assertEqual(mode["./etc/init.d/wharf-openclash-guard"], 0o755)
+            self.assertIn("prerm", info["scripts"])
             self.assertIn("gl-sdk4-ui-core", info["control"]["Depends"])
             self.assertIn("postinst", info["scripts"])
 

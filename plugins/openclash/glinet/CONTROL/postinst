@@ -2,6 +2,27 @@
 # wharf-openclash-glinet (runs on the router, inside the opkg transaction).
 [ -n "${IPKG_INSTROOT}" ] && exit 0
 
+# Firmware 4.10.2 checks package signatures (`option check_signature`): trust the wharf
+# key. Shipped as a plain file and copied here (not owned by the package) so that
+# removing the adapter does not remove the user's trust decision. /etc/opkg/keys is kept
+# across firmware upgrades.
+mkdir -p /etc/opkg/keys
+for k in /usr/share/wharf-openclash/keys/*; do
+	[ -f "$k" ] || continue
+	cmp -s "$k" "/etc/opkg/keys/${k##*/}" 2>/dev/null || cp "$k" "/etc/opkg/keys/${k##*/}"
+done
+
+# The feed itself: /etc/opkg/customfeeds.conf is kept across upgrades (keep.d), but make
+# sure the line exists, whatever name the user gave the source in the panel.
+FEED_URL=https://0xfe10.github.io/wharf
+if ! grep -qF "$FEED_URL" /etc/opkg/customfeeds.conf 2>/dev/null; then
+	echo "src/gz wharf $FEED_URL" >> /etc/opkg/customfeeds.conf
+fi
+
+# Boot-time guard that repairs DNS if a firmware upgrade removes OpenClash but keeps
+# its dnsmasq settings (see /usr/libexec/wharf-openclash/heal-dns).
+[ -x /etc/init.d/wharf-openclash-guard ] && /etc/init.d/wharf-openclash-guard enable >/dev/null 2>&1
+
 # Reload (not restart) GL.iNet's nginx so the new menu entry is picked up.
 [ -x /etc/init.d/nginx ] && /etc/init.d/nginx reload >/dev/null 2>&1
 

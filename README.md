@@ -29,8 +29,12 @@ the large response headers of `github.com`, so release downloads fail there even
 Details: [docs/using-the-feed.md](docs/using-the-feed.md).
 
 > From v1.0.1 the feed is signed (usign). Stock OpenWrt needs the public key imported
-> first, see [docs/using-the-feed.md](docs/using-the-feed.md); GL.iNet does not check signatures.
-> Only add feeds you trust.
+> first, see [docs/using-the-feed.md](docs/using-the-feed.md). GL.iNet firmware 4.10.0 does not check
+> signatures, **4.10.2 does**: import the key once over SSH (the panel cannot). Only add feeds you trust.
+>
+> From `wharf-openclash-glinet` 1.2.0 the feed, its key and OpenClash's data are kept across GL.iNet
+> firmware upgrades and a boot guard repairs DNS if an upgrade removes OpenClash
+> ([details and limits](docs/using-the-feed.md#firmware-upgrades-gl-inet)).
 
 ## Layout
 

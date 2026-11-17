@@ -30,6 +30,14 @@ dir=$(get '.dir // ""')
 depends=$(get '(.depends // []) | join(", ")')
 desc=$(get '.description')
 gzips=$(get '(.gzip // [])[]')
+usign_keys=$(get '(.usign_keys // [])[]')
+repo_root=$(cd "$(dirname "$0")/.." && pwd)
+
+# usign key fingerprint = the 8 key-number bytes after the 2-byte algorithm id in the
+# base64 payload (second line); opkg looks the key up under that file name.
+usign_fingerprint() {
+	sed -n 2p "$1" | base64 -d 2>/dev/null | od -An -tx1 -j2 -N8 | tr -d ' \n'
+}
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -50,6 +58,18 @@ if [ -n "$dir" ]; then
 		done
 	fi
 fi
+
+# Public keys come from keys/ (single source of truth), stored under their fingerprint:
+# /usr/share/wharf-<plugin>/keys/<fingerprint>. The package's postinst copies them to
+# /etc/opkg/keys/ (it is not owned by the package, so removal keeps the user's trust).
+for k in $usign_keys; do
+	safe_rel "$k"
+	[ -f "$repo_root/$k" ] || die "usign key $k not found"
+	fp=$(usign_fingerprint "$repo_root/$k")
+	[ "${#fp}" -eq 16 ] || die "cannot read the fingerprint of $k"
+	mkdir -p "$work/data/usr/share/wharf-$plugin/keys"
+	cp "$repo_root/$k" "$work/data/usr/share/wharf-$plugin/keys/$fp"
+done
 
 [ -z "$(find "$work/data" -type l)" ] || die "symlinks are not allowed in package data"
 

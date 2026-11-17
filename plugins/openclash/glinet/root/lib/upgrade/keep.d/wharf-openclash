@@ -1,2 +1,7 @@
 /etc/openclash/
 /etc/config/openclash
+/etc/opkg/customfeeds.conf
+/etc/opkg/keys/3b9c3e21277942f0
+/etc/init.d/wharf-openclash-guard
+/etc/rc.d/S18wharf-openclash-guard
+/usr/libexec/wharf-openclash/heal-dns

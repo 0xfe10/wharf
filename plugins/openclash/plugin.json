@@ -11,11 +11,14 @@
   "packages": [
     {
       "name": "wharf-openclash-glinet",
-      "version": "1.1.1-1",
+      "version": "1.2.0-1",
       "feed": "glinet",
       "dir": "glinet",
       "gzip": [
         "www/views/gl-sdk4-ui-openclash.common.js"
+      ],
+      "usign_keys": [
+        "keys/wharf-usign.pub"
       ],
       "depends": [
         "luci-app-openclash",
@@ -24,7 +27,7 @@
         "luci-base",
         "gl-sdk4-ui-core"
       ],
-      "description": "OpenClash for GL.iNet 4.x firmware\nAdds an OpenClash entry under Applications in the GL.iNet admin panel, installs OpenClash (luci-app-openclash) and LuCI, enables LuCI automatically, and keeps /etc/openclash across firmware upgrades."
+      "description": "OpenClash for GL.iNet 4.x firmware\nAdds an OpenClash entry under Applications in the GL.iNet admin panel, installs OpenClash (luci-app-openclash) and LuCI, enables LuCI automatically, and keeps /etc/openclash, the wharf feed and its signing key across firmware upgrades. A boot-time guard repairs DNS if an upgrade removes OpenClash but keeps its dnsmasq settings."
     }
   ]
 }

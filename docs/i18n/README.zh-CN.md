@@ -17,7 +17,9 @@ https://0xfe10.github.io/wharf
 
 详见 [using-the-feed.md](../using-the-feed.md)(英文)。
 
-> 软件源索引已用 usign 签名(v1.0.1 起)。原版 OpenWrt 需要先导入公钥,见 [using-the-feed.md](../using-the-feed.md)(英文);GL.iNet 不校验签名。请只添加你信任的源。
+> 软件源索引已用 usign 签名(v1.0.1 起)。原版 OpenWrt 需要先导入公钥,见 [using-the-feed.md](../using-the-feed.md)(英文)。GL.iNet 固件 4.10.0 不校验签名,**4.10.2 会校验**:需要通过 SSH 导入一次公钥(面板不支持导入)。请只添加你信任的源。
+>
+> 从 `wharf-openclash-glinet` 1.2.0 起,固件升级时会保留软件源、公钥和 OpenClash 数据,并在开机时由守护脚本在升级删掉 OpenClash 后修复 DNS(详见英文文档 [Firmware upgrades](../using-the-feed.md#firmware-upgrades-gl-inet),含限制:升级前必须已安装 1.2.0 或更新版本)。
 
 ## 结构
 

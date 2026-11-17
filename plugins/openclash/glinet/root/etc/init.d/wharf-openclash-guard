@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+# Enabled by the wharf-openclash-glinet package (postinst) and kept across firmware
+# upgrades (keep.d), so it still runs after an upgrade removed the package.
+# Starts before dnsmasq (START=19) and repairs dnsmasq's config if OpenClash is gone.
+
+START=18
+
+start() {
+	[ -x /usr/libexec/wharf-openclash/heal-dns ] && /usr/libexec/wharf-openclash/heal-dns boot
+	return 0
+}

@@ -17,7 +17,9 @@ https://0xfe10.github.io/wharf
 
 자세한 내용은 [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요.
 
-> 피드 인덱스는 usign으로 서명됩니다(v1.0.1부터). 기본 OpenWrt에서는 먼저 공개 키를 가져와야 합니다. [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요. GL.iNet은 서명을 검증하지 않습니다. 신뢰할 수 있는 피드만 추가하세요.
+> 피드 인덱스는 usign으로 서명됩니다(v1.0.1부터). 기본 OpenWrt에서는 먼저 공개 키를 가져와야 합니다. [using-the-feed.md](../using-the-feed.md)(영어)를 참고하세요. GL.iNet 펌웨어 4.10.0은 서명을 검증하지 않지만 **4.10.2는 검증합니다**. SSH로 공개 키를 한 번 가져와야 합니다(관리 화면에서는 불가능). 신뢰할 수 있는 피드만 추가하세요.
+>
+> `wharf-openclash-glinet` 1.2.0부터 펌웨어 업그레이드 후에도 피드, 공개 키, OpenClash 데이터가 유지되며, 업그레이드로 OpenClash가 삭제되면 부팅 시 가드가 DNS를 복구합니다(자세한 내용과 제한은 영어 문서 [Firmware upgrades](../using-the-feed.md#firmware-upgrades-gl-inet) 참고. 업그레이드 전에 1.2.0 이상이 설치되어 있어야 합니다).
 
 ## 구조
 
