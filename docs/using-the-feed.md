@@ -82,7 +82,7 @@ undoes what OpenClash itself had changed, the way OpenClash's own stop does: it 
 the servers OpenClash saved), turns `noresolv` back off if no upstream server is left (or OpenClash saved it as off),
 restores the cache size / AAAA filter OpenClash saved, deletes OpenClash's `/tmp/dnsmasq.d` snippets and its
 firewall include. It never touches other DNS settings, does nothing while OpenClash is installed or something
-listens on that port, and logs to syslog (`logread -e wharf-openclash-guard`). When OpenClash is reinstalled later it
+listens on that port, and logs to `/tmp/wharf-openclash-guard.log` (and syslog when it is already running; at boot it is not). When OpenClash is reinstalled later it
 sets up its own DNS redirect again. You can run it by hand: `/usr/libexec/wharf-openclash/heal-dns run`
 (also restarts dnsmasq).
 
